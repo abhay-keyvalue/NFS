@@ -4,6 +4,8 @@ export type GameState = 'idle' | 'countdown' | 'running' | 'paused' | 'gameover'
 
 export type PlayerMode = 'single' | 'multi' | 'ai'
 
+export type Difficulty = 'easy' | 'medium' | 'hard'
+
 export type ControlsState = {
   accelerate: boolean
   brake: boolean

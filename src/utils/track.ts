@@ -34,11 +34,21 @@ export const TRACK_LENGTH = trackCurve.getLength()
 
 const startPoint = trackCurve.getPointAt(0)
 const startTangent = trackCurve.getTangentAt(0)
-export const START_POSITION = new Vector3(startPoint.x, startPoint.y + 0.35, startPoint.z)
 export const START_HEADING = Math.atan2(startTangent.z, startTangent.x)
 
-const p2Offset = trackCurve.getPointAt(0.985)
-export const START_POSITION_P2 = new Vector3(p2Offset.x, p2Offset.y + 0.35, p2Offset.z)
+const lateral = new Vector3(-startTangent.z, 0, startTangent.x).normalize()
+const LANE_OFFSET = 2.2
+
+export const START_POSITION = new Vector3(
+  startPoint.x + lateral.x * LANE_OFFSET,
+  startPoint.y + 0.35,
+  startPoint.z + lateral.z * LANE_OFFSET,
+)
+export const START_POSITION_P2 = new Vector3(
+  startPoint.x - lateral.x * LANE_OFFSET,
+  startPoint.y + 0.35,
+  startPoint.z - lateral.z * LANE_OFFSET,
+)
 
 export type TrackQuery = {
   closestPoint: Vector3

@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
 import { Suspense, useMemo, useRef } from 'react'
-import type { CameraTarget, GameState, PlayerMode, Telemetry } from '../types/game'
+import type { CameraTarget, Difficulty, GameState, PlayerMode, Telemetry } from '../types/game'
 import { START_HEADING, START_POSITION, START_POSITION_P2 } from '../utils/track'
 import { ARROW_KEYMAP, WASD_KEYMAP } from '../hooks/useKeyboardControls'
 import { AICar } from './AICar'
@@ -14,11 +14,12 @@ type Props = {
   gameState: GameState
   resetToken: number
   playerMode: PlayerMode
+  difficulty: Difficulty
   onTelemetryP1: (telemetry: Telemetry) => void
   onTelemetryP2: (telemetry: Telemetry) => void
 }
 
-export function RacingScene({ gameState, resetToken, playerMode, onTelemetryP1, onTelemetryP2 }: Props) {
+export function RacingScene({ gameState, resetToken, playerMode, difficulty, onTelemetryP1, onTelemetryP2 }: Props) {
   const initialTarget = useMemo<CameraTarget>(
     () => ({
       position: START_POSITION.clone(),
@@ -91,6 +92,7 @@ export function RacingScene({ gameState, resetToken, playerMode, onTelemetryP1, 
             targetRef={targetRefP2}
             onTelemetry={onTelemetryP2}
             opponentRef={targetRefP1}
+            difficulty={difficulty}
           />
         )}
       </Suspense>

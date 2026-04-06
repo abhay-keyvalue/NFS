@@ -3,13 +3,14 @@ import { HomeScreen } from './components/HomeScreen'
 import { HUD } from './components/HUD'
 import { Loader } from './components/Loader'
 import { RacingScene } from './components/RacingScene'
-import type { GameState, PlayerMode, Telemetry } from './types/game'
+import type { Difficulty, GameState, PlayerMode, Telemetry } from './types/game'
 
 const TOTAL_LAPS = 3
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState>('idle')
   const [playerMode, setPlayerMode] = useState<PlayerMode>('single')
+  const [difficulty, setDifficulty] = useState<Difficulty>('medium')
   const [winner, setWinner] = useState<1 | 2 | null>(null)
   const [countdownNum, setCountdownNum] = useState(0)
 
@@ -99,11 +100,12 @@ export default function App() {
     setResetToken((v) => v + 1)
   }, [])
 
-  const start = useCallback((mode: PlayerMode) => {
+  const start = useCallback((mode: PlayerMode, diff?: Difficulty) => {
     if (gameState === 'gameover') {
       resetRace()
     }
     setPlayerMode(mode)
+    if (diff) setDifficulty(diff)
     setGameState('countdown')
   }, [gameState, resetRace])
 
@@ -137,6 +139,7 @@ export default function App() {
             gameState={gameState}
             resetToken={resetToken}
             playerMode={playerMode}
+            difficulty={difficulty}
             onTelemetryP1={onTelemetryP1}
             onTelemetryP2={onTelemetryP2}
           />

@@ -1,4 +1,4 @@
-import type { GameState, PlayerMode } from '../types/game'
+import type { Difficulty, GameState, PlayerMode } from '../types/game'
 import { formatTime } from '../utils/game'
 
 type Props = {
@@ -14,7 +14,7 @@ type Props = {
   gameState: GameState
   countdownNum: number
   winner: 1 | 2 | null
-  onStart: (mode: PlayerMode) => void
+  onStart: (mode: PlayerMode, difficulty?: Difficulty) => void
   onPauseToggle: () => void
   onReset: () => void
 }
@@ -59,7 +59,7 @@ export function HUD({
               {gameState === 'paused' ? 'Resume' : 'Pause'}
             </button>
             <button className="action-btn action-btn-sm danger" onClick={onReset}>
-              Reset
+              Exit
             </button>
           </div>
         </div>
@@ -99,7 +99,7 @@ export function HUD({
               {gameState === 'paused' ? 'Continue' : 'Pause'}
             </button>
             <button className="action-btn danger" onClick={onReset}>
-              Reset
+              Exit
             </button>
           </div>
         </div>

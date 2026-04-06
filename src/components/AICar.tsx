@@ -4,19 +4,23 @@ import { useEffect, useMemo, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { Group } from 'three'
 import { Box3, Color, Mesh, MeshStandardMaterial, Vector3 } from 'three'
-import type { CameraTarget, GameState, Telemetry } from '../types/game'
+import type { CameraTarget, Difficulty, GameState, Telemetry } from '../types/game'
 import {
   trackCurve,
   TRACK_LENGTH,
+  START_POSITION_P2,
   crossedStartGate,
 } from '../utils/track'
 
 const CAR_MODEL = `${import.meta.env.BASE_URL}models/peugeot_205_gti.glb`
 
-const AI_BASE_SPEED = 22
-const AI_SPEED_VARIATION = 4
+const AI_PROFILES: Record<Difficulty, { baseSpeed: number; variation: number; wobble: number }> = {
+  easy:   { baseSpeed: 16, variation: 3,   wobble: 2.5 },
+  medium: { baseSpeed: 22, variation: 4,   wobble: 1.5 },
+  hard:   { baseSpeed: 28, variation: 2.5, wobble: 0.6 },
+}
+
 const AI_VARIATION_FREQ = 0.3
-const AI_LATERAL_OFFSET = 1.5
 const CAR_COLLISION_DIST = 3.5
 
 type GLTFResult = { scene: Group }
@@ -27,11 +31,12 @@ type Props = {
   targetRef: MutableRefObject<CameraTarget>
   onTelemetry: (telemetry: Telemetry) => void
   opponentRef?: MutableRefObject<CameraTarget>
+  difficulty: Difficulty
 }
 
-export function AICar({ gameState, resetToken, targetRef, onTelemetry, opponentRef }: Props) {
+export function AICar({ gameState, resetToken, targetRef, onTelemetry, opponentRef, difficulty }: Props) {
   const carRef = useRef<Group>(null)
-  const tRef = useRef(0.985)
+  const tRef = useRef(0)
   const lapRef = useRef(1)
   const lapDistRef = useRef(0)
   const telemetryTickRef = useRef(0)
@@ -70,14 +75,10 @@ export function AICar({ gameState, resetToken, targetRef, onTelemetry, opponentR
     return carScene
   }, [gltf.scene])
 
-  const startPos = useMemo(() => {
-    const p = trackCurve.getPointAt(0.985)
-    p.y += 0.35
-    return p
-  }, [])
+  const startPos = useMemo(() => START_POSITION_P2.clone(), [])
 
   useEffect(() => {
-    tRef.current = 0.985
+    tRef.current = 0
     lapRef.current = 1
     lapDistRef.current = 0
     speedRef.current = 0
@@ -110,8 +111,9 @@ export function AICar({ gameState, resetToken, targetRef, onTelemetry, opponentR
     const dt = Math.min(delta, 0.05)
     timeRef.current += dt
 
-    const speedVariation = Math.sin(timeRef.current * AI_VARIATION_FREQ * Math.PI * 2) * AI_SPEED_VARIATION
-    const currentSpeed = AI_BASE_SPEED + speedVariation
+    const profile = AI_PROFILES[difficulty]
+    const speedVariation = Math.sin(timeRef.current * AI_VARIATION_FREQ * Math.PI * 2) * profile.variation
+    const currentSpeed = profile.baseSpeed + speedVariation
     speedRef.current = currentSpeed
 
     const distThisFrame = currentSpeed * dt
@@ -121,7 +123,7 @@ export function AICar({ gameState, resetToken, targetRef, onTelemetry, opponentR
     const point = trackCurve.getPointAt(tRef.current)
     const tangent = trackCurve.getTangentAt(tRef.current)
 
-    const lateralWobble = Math.sin(timeRef.current * 0.7) * AI_LATERAL_OFFSET
+    const lateralWobble = Math.sin(timeRef.current * 0.7) * profile.wobble
     const lateral = new Vector3(-tangent.z, 0, tangent.x).normalize()
 
     const pos = point.clone()

@@ -299,9 +299,22 @@ export function Track() {
 
   return (
     <group>
+      {/* Ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.3, 0]}>
         <planeGeometry args={[500, 500]} />
         <meshStandardMaterial color="#4a8c3a" roughness={1} />
+      </mesh>
+
+      {/* Water body inside the track loop */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-10, -0.18, 73]} scale={[35, 20, 1]}>
+        <circleGeometry args={[1, 48]} />
+        <meshStandardMaterial
+          color="#1a6e9e"
+          roughness={0.12}
+          metalness={0.35}
+          transparent
+          opacity={0.85}
+        />
       </mesh>
 
       <mesh receiveShadow>
