@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import type { ControlsState } from '../types/game'
+import type { ControlsState, KeyMap } from '../types/game'
 
 const DEFAULT: ControlsState = {
   accelerate: false,
@@ -8,27 +8,37 @@ const DEFAULT: ControlsState = {
   right: false,
 }
 
-const KEYMAP: Record<string, keyof ControlsState> = {
+export const ARROW_KEYMAP: KeyMap = {
   ArrowUp: 'accelerate',
+  ArrowDown: 'brake',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+}
+
+export const WASD_KEYMAP: KeyMap = {
   w: 'accelerate',
   W: 'accelerate',
-  ArrowDown: 'brake',
   s: 'brake',
   S: 'brake',
-  ArrowLeft: 'left',
   a: 'left',
   A: 'left',
-  ArrowRight: 'right',
   d: 'right',
   D: 'right',
 }
 
-export function useKeyboardControls() {
+export const ALL_KEYS_KEYMAP: KeyMap = {
+  ...ARROW_KEYMAP,
+  ...WASD_KEYMAP,
+}
+
+export function useKeyboardControls(keymap: KeyMap = ALL_KEYS_KEYMAP) {
   const controlsRef = useRef<ControlsState>({ ...DEFAULT })
+  const keymapRef = useRef(keymap)
+  keymapRef.current = keymap
 
   useEffect(() => {
     const setValue = (event: KeyboardEvent, pressed: boolean) => {
-      const key = KEYMAP[event.key]
+      const key = keymapRef.current[event.key]
       if (!key) {
         return
       }

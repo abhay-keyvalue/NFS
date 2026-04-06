@@ -3,10 +3,10 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { Group } from 'three'
-import { Box3, Mesh, Vector3 } from 'three'
+import { Box3, Color, Mesh, MeshStandardMaterial, Vector3 } from 'three'
 import { useCarPhysics } from '../hooks/useCarPhysics'
-import { useKeyboardControls } from '../hooks/useKeyboardControls'
-import type { CameraTarget, GameState, Telemetry } from '../types/game'
+import { useKeyboardControls, ALL_KEYS_KEYMAP } from '../hooks/useKeyboardControls'
+import type { CameraTarget, GameState, KeyMap, Telemetry } from '../types/game'
 import { clamp } from '../utils/game'
 import {
   START_POSITION,
@@ -27,19 +27,31 @@ type Props = {
   resetToken: number
   targetRef: MutableRefObject<CameraTarget>
   onTelemetry: (telemetry: Telemetry) => void
+  keymap?: KeyMap
+  startPos?: Vector3
+  carColor?: string
 }
 
-export function PlayerCar({ gameState, resetToken, targetRef, onTelemetry }: Props) {
+export function PlayerCar({
+  gameState,
+  resetToken,
+  targetRef,
+  onTelemetry,
+  keymap = ALL_KEYS_KEYMAP,
+  startPos,
+  carColor,
+}: Props) {
+  const effectiveStart = startPos ?? START_POSITION
   const carRef = useRef<Group>(null)
   const lapRef = useRef(1)
   const lapDistRef = useRef(0)
   const collisionsRef = useRef(0)
   const wallHitActiveRef = useRef(false)
   const telemetryTickRef = useRef(0)
-  const prevPosRef = useRef(START_POSITION.clone())
+  const prevPosRef = useRef(effectiveStart.clone())
 
-  const { controlsRef, resetControls } = useKeyboardControls()
-  const { speedRef, headingRef, positionRef, step, reset } = useCarPhysics()
+  const { controlsRef, resetControls } = useKeyboardControls(keymap)
+  const { speedRef, headingRef, positionRef, step, reset } = useCarPhysics(effectiveStart)
   const gltf = useGLTF(CAR_MODEL) as GLTFResult
   const preparedCarScene = useMemo(() => {
     const carScene = gltf.scene.clone(true)
@@ -51,7 +63,7 @@ export function PlayerCar({ gameState, resetToken, targetRef, onTelemetry }: Pro
     const maxXZ = Math.max(size.x, size.z) || 1
     const targetLength = 3.6
     carScene.scale.multiplyScalar(targetLength / maxXZ)
-    carScene.position.y += 0.6
+    carScene.position.y += 0.4
     carScene.rotation.y = Math.PI * 2
 
     carScene.traverse((obj) => {
@@ -59,11 +71,16 @@ export function PlayerCar({ gameState, resetToken, targetRef, onTelemetry }: Pro
       if (mesh.isMesh) {
         mesh.castShadow = true
         mesh.receiveShadow = true
+        if (carColor) {
+          const mat = (mesh.material as MeshStandardMaterial).clone()
+          mat.color = new Color(carColor)
+          mesh.material = mat
+        }
       }
     })
 
     return carScene
-  }, [gltf.scene])
+  }, [gltf.scene, carColor])
 
   useEffect(() => {
     reset()
@@ -73,9 +90,9 @@ export function PlayerCar({ gameState, resetToken, targetRef, onTelemetry }: Pro
     collisionsRef.current = 0
     wallHitActiveRef.current = false
     telemetryTickRef.current = 0
-    prevPosRef.current.copy(START_POSITION)
+    prevPosRef.current.copy(effectiveStart)
 
-    const pos = START_POSITION.clone()
+    const pos = effectiveStart.clone()
     targetRef.current.position.copy(pos)
     targetRef.current.heading = headingRef.current
     targetRef.current.shake = 0
@@ -120,7 +137,7 @@ export function PlayerCar({ gameState, resetToken, targetRef, onTelemetry }: Pro
       wallHitActiveRef.current = false
     }
 
-    pos.y = query.closestPoint.y + 0.35
+    pos.y = query.closestPoint.y + 0.10
 
     if (speed > 0.5) {
       lapDistRef.current += Math.abs(speed) * delta
@@ -152,7 +169,7 @@ export function PlayerCar({ gameState, resetToken, targetRef, onTelemetry }: Pro
   })
 
   return (
-    <group ref={carRef} position={START_POSITION.toArray()}>
+    <group ref={carRef} position={effectiveStart.toArray()}>
       <primitive object={preparedCarScene} />
     </group>
   )

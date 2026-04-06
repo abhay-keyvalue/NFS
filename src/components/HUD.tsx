@@ -1,68 +1,146 @@
-import type { GameState } from '../types/game'
+import type { GameState, PlayerMode } from '../types/game'
 import { formatTime } from '../utils/game'
 
 type Props = {
-  speedKmh: number
-  lap: number
+  playerMode: PlayerMode
+  speedKmhP1: number
+  lapP1: number
+  speedKmhP2: number
+  lapP2: number
   totalLaps: number
   elapsedMs: number
-  collisions: number
+  collisionsP1: number
+  collisionsP2: number
   gameState: GameState
-  onStart: () => void
+  winner: 1 | 2 | null
+  onStart: (mode: PlayerMode) => void
   onPauseToggle: () => void
   onReset: () => void
 }
 
 export function HUD({
-  speedKmh,
-  lap,
+  playerMode,
+  speedKmhP1,
+  lapP1,
+  speedKmhP2,
+  lapP2,
   totalLaps,
   elapsedMs,
-  collisions,
+  collisionsP1,
+  collisionsP2,
   gameState,
+  winner,
   onStart,
   onPauseToggle,
   onReset,
 }: Props) {
+  const isMulti = playerMode === 'multi'
+  const isRunningMulti = isMulti && (gameState === 'running' || gameState === 'paused')
+
   return (
-    <div className="hud-root">
-      <div className="hud-panel hud-stats">
-        <Stat label="Speed" value={`${Math.max(0, speedKmh).toFixed(0)} km/h`} />
-        <Stat label="Lap" value={`${Math.min(lap, totalLaps)}/${totalLaps}`} />
-        <Stat label="Timer" value={formatTime(elapsedMs)} />
-        <Stat label="Collisions" value={String(collisions)} />
-      </div>
+    <div className={`hud-root ${isRunningMulti ? 'hud-split' : ''}`}>
+      {isRunningMulti && (
+        <>
+          <div className="split-divider-h" />
+          <div className="split-divider-v" />
+        </>
+      )}
 
-      <div className="hud-panel hud-controls">
-        <div className="hud-buttons">
-          <button className="action-btn primary" disabled={gameState === 'running'} onClick={onStart}>
-            {gameState === 'idle' ? 'Start' : 'Resume'}
-          </button>
-          <button
-            className="action-btn"
-            disabled={gameState === 'idle' || gameState === 'gameover'}
-            onClick={onPauseToggle}
-          >
-            {gameState === 'paused' ? 'Continue' : 'Pause'}
-          </button>
-          <button className="action-btn danger" onClick={onReset}>
-            Reset
-          </button>
+      {/* In split mode: timer in top area, P1 stats bottom-left, P2 stats bottom-right */}
+      {isRunningMulti && (
+        <div className="hud-panel hud-top-timer">
+          <Stat label="Timer" value={formatTime(elapsedMs)} />
+          <div className="hud-buttons-inline">
+            <button className="action-btn action-btn-sm" onClick={onPauseToggle}>
+              {gameState === 'paused' ? 'Resume' : 'Pause'}
+            </button>
+            <button className="action-btn action-btn-sm danger" onClick={onReset}>
+              Reset
+            </button>
+          </div>
         </div>
-        <p className="hint">Controls: W/Arrow Up accelerate, S/Arrow Down brake, A/D or Arrow Left/Right to steer.</p>
+      )}
+
+      <div className={`hud-panel hud-stats ${isRunningMulti ? 'hud-stats-split-p1' : ''}`}>
+        {isMulti && <span className="player-label p1-label">P1 — Arrows</span>}
+        <Stat label="Speed" value={`${Math.max(0, speedKmhP1).toFixed(0)} km/h`} />
+        <Stat label="Lap" value={`${Math.min(lapP1, totalLaps)}/${totalLaps}`} />
+        {!isRunningMulti && <Stat label="Timer" value={formatTime(elapsedMs)} />}
+        <Stat label="Hits" value={String(collisionsP1)} />
       </div>
 
-      {(gameState === 'idle' || gameState === 'gameover') && (
+      {isMulti && (
+        <div className={`hud-panel hud-stats ${isRunningMulti ? 'hud-stats-split-p2' : 'hud-stats-p2'}`}>
+          <span className="player-label p2-label">P2 — WASD</span>
+          <Stat label="Speed" value={`${Math.max(0, speedKmhP2).toFixed(0)} km/h`} />
+          <Stat label="Lap" value={`${Math.min(lapP2, totalLaps)}/${totalLaps}`} />
+          <Stat label="Hits" value={String(collisionsP2)} />
+        </div>
+      )}
+
+      {!isRunningMulti && (
+        <div className="hud-panel hud-controls">
+          <div className="hud-buttons">
+            <button
+              className="action-btn"
+              disabled={gameState === 'idle' || gameState === 'gameover'}
+              onClick={onPauseToggle}
+            >
+              {gameState === 'paused' ? 'Continue' : 'Pause'}
+            </button>
+            <button className="action-btn danger" onClick={onReset}>
+              Reset
+            </button>
+          </div>
+        </div>
+      )}
+
+      {gameState === 'idle' && (
+        <div className="hud-overlay">
+          <div className="hud-overlay-card mode-select">
+            <h2>3D Racing Challenge</h2>
+            <p>Complete {totalLaps} laps as fast as you can!</p>
+            <div className="mode-buttons">
+              <button className="mode-btn single-btn" onClick={() => onStart('single')}>
+                <span className="mode-icon">🏎</span>
+                <span className="mode-title">Single Player</span>
+                <span className="mode-desc">Race against time</span>
+              </button>
+              <button className="mode-btn multi-btn" onClick={() => onStart('multi')}>
+                <span className="mode-icon">🏁</span>
+                <span className="mode-title">Multiplayer</span>
+                <span className="mode-desc">P1 Arrows vs P2 WASD</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {gameState === 'gameover' && (
         <div className="hud-overlay">
           <div className="hud-overlay-card">
-            <h2>{gameState === 'gameover' ? 'Race Complete' : '3D Racing Challenge'}</h2>
+            <h2>
+              {winner
+                ? `Player ${winner} Wins!`
+                : 'Race Complete'}
+            </h2>
             <p>
-              {gameState === 'gameover'
-                ? `Finished in ${formatTime(elapsedMs)} with ${collisions} collisions.`
-                : 'Complete three laps while avoiding barriers and obstacles.'}
+              Finished in {formatTime(elapsedMs)}
+              {winner === null && ` with ${collisionsP1} collisions.`}
             </p>
-            <button className="action-btn primary" onClick={onStart}>
-              {gameState === 'gameover' ? 'Race Again' : 'Start Race'}
+            <button className="action-btn primary" onClick={() => onStart(playerMode)}>
+              Race Again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {gameState === 'paused' && (
+        <div className="hud-overlay">
+          <div className="hud-overlay-card">
+            <h2>Paused</h2>
+            <button className="action-btn primary" onClick={onPauseToggle}>
+              Resume
             </button>
           </div>
         </div>

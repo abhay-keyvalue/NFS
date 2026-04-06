@@ -1,16 +1,24 @@
 import { useCallback, useEffect, useState } from 'react'
 import { HUD } from './components/HUD'
 import { RacingScene } from './components/RacingScene'
-import type { GameState, Telemetry } from './types/game'
+import type { GameState, PlayerMode, Telemetry } from './types/game'
 
 const TOTAL_LAPS = 3
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState>('idle')
-  const [speedKmh, setSpeedKmh] = useState(0)
-  const [lap, setLap] = useState(1)
+  const [playerMode, setPlayerMode] = useState<PlayerMode>('single')
+  const [winner, setWinner] = useState<1 | 2 | null>(null)
+
+  const [speedKmhP1, setSpeedKmhP1] = useState(0)
+  const [lapP1, setLapP1] = useState(1)
+  const [collisionsP1, setCollisionsP1] = useState(0)
+
+  const [speedKmhP2, setSpeedKmhP2] = useState(0)
+  const [lapP2, setLapP2] = useState(1)
+  const [collisionsP2, setCollisionsP2] = useState(0)
+
   const [elapsedMs, setElapsedMs] = useState(0)
-  const [collisions, setCollisions] = useState(0)
   const [resetToken, setResetToken] = useState(0)
 
   useEffect(() => {
@@ -24,29 +32,54 @@ export default function App() {
   }, [gameState])
 
   useEffect(() => {
-    if (lap > TOTAL_LAPS) {
-      setGameState('gameover')
-    }
-  }, [lap])
+    if (gameState !== 'running') return
 
-  const onTelemetry = useCallback((telemetry: Telemetry) => {
-    setSpeedKmh(Math.abs(telemetry.speedMps) * 3.6)
-    setLap(telemetry.lap)
-    setCollisions(telemetry.collisions)
+    if (playerMode === 'single') {
+      if (lapP1 > TOTAL_LAPS) {
+        setWinner(null)
+        setGameState('gameover')
+      }
+    } else {
+      if (lapP1 > TOTAL_LAPS && winner === null) {
+        setWinner(1)
+        setGameState('gameover')
+      }
+      if (lapP2 > TOTAL_LAPS && winner === null) {
+        setWinner(2)
+        setGameState('gameover')
+      }
+    }
+  }, [lapP1, lapP2, playerMode, gameState, winner])
+
+  const onTelemetryP1 = useCallback((telemetry: Telemetry) => {
+    setSpeedKmhP1(Math.abs(telemetry.speedMps) * 3.6)
+    setLapP1(telemetry.lap)
+    setCollisionsP1(telemetry.collisions)
+  }, [])
+
+  const onTelemetryP2 = useCallback((telemetry: Telemetry) => {
+    setSpeedKmhP2(Math.abs(telemetry.speedMps) * 3.6)
+    setLapP2(telemetry.lap)
+    setCollisionsP2(telemetry.collisions)
   }, [])
 
   const resetRace = useCallback(() => {
-    setSpeedKmh(0)
-    setLap(1)
+    setSpeedKmhP1(0)
+    setLapP1(1)
+    setCollisionsP1(0)
+    setSpeedKmhP2(0)
+    setLapP2(1)
+    setCollisionsP2(0)
     setElapsedMs(0)
-    setCollisions(0)
+    setWinner(null)
     setResetToken((v) => v + 1)
   }, [])
 
-  const start = useCallback(() => {
+  const start = useCallback((mode: PlayerMode) => {
     if (gameState === 'gameover') {
       resetRace()
     }
+    setPlayerMode(mode)
     setGameState('running')
   }, [gameState, resetRace])
 
@@ -67,16 +100,27 @@ export default function App() {
     <div className="app-shell">
       <main className="game-layout">
         <section className="scene-area">
-          <RacingScene gameState={gameState} resetToken={resetToken} onTelemetry={onTelemetry} />
+          <RacingScene
+            gameState={gameState}
+            resetToken={resetToken}
+            playerMode={playerMode}
+            onTelemetryP1={onTelemetryP1}
+            onTelemetryP2={onTelemetryP2}
+          />
         </section>
 
         <HUD
-          speedKmh={speedKmh}
-          lap={lap}
+          playerMode={playerMode}
+          speedKmhP1={speedKmhP1}
+          lapP1={lapP1}
+          speedKmhP2={speedKmhP2}
+          lapP2={lapP2}
           totalLaps={TOTAL_LAPS}
           elapsedMs={elapsedMs}
-          collisions={collisions}
+          collisionsP1={collisionsP1}
+          collisionsP2={collisionsP2}
           gameState={gameState}
+          winner={winner}
           onStart={start}
           onPauseToggle={togglePause}
           onReset={reset}

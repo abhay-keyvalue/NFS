@@ -1,20 +1,23 @@
 import { Canvas } from '@react-three/fiber'
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
 import { Suspense, useMemo, useRef } from 'react'
-import type { CameraTarget, GameState, Telemetry } from '../types/game'
-import { START_HEADING, START_POSITION } from '../utils/track'
+import type { CameraTarget, GameState, PlayerMode, Telemetry } from '../types/game'
+import { START_HEADING, START_POSITION, START_POSITION_P2 } from '../utils/track'
+import { ARROW_KEYMAP, WASD_KEYMAP } from '../hooks/useKeyboardControls'
 import { EnvironmentObjects } from './EnvironmentObjects'
-import { FollowCamera } from './FollowCamera'
+import { FollowCamera, SplitScreenCamera } from './FollowCamera'
 import { PlayerCar } from './PlayerCar'
 import { Track } from './Track'
 
 type Props = {
   gameState: GameState
   resetToken: number
-  onTelemetry: (telemetry: Telemetry) => void
+  playerMode: PlayerMode
+  onTelemetryP1: (telemetry: Telemetry) => void
+  onTelemetryP2: (telemetry: Telemetry) => void
 }
 
-export function RacingScene({ gameState, resetToken, onTelemetry }: Props) {
+export function RacingScene({ gameState, resetToken, playerMode, onTelemetryP1, onTelemetryP2 }: Props) {
   const initialTarget = useMemo<CameraTarget>(
     () => ({
       position: START_POSITION.clone(),
@@ -23,7 +26,19 @@ export function RacingScene({ gameState, resetToken, onTelemetry }: Props) {
     }),
     [],
   )
-  const targetRef = useRef<CameraTarget>(initialTarget)
+  const targetRefP1 = useRef<CameraTarget>(initialTarget)
+
+  const initialTargetP2 = useMemo<CameraTarget>(
+    () => ({
+      position: START_POSITION_P2.clone(),
+      heading: START_HEADING,
+      shake: 0,
+    }),
+    [],
+  )
+  const targetRefP2 = useRef<CameraTarget>(initialTargetP2)
+
+  const isMulti = playerMode === 'multi'
 
   return (
     <Canvas shadows camera={{ position: [START_POSITION.x - 10, START_POSITION.y + 6, START_POSITION.z - 10], fov: 55 }} dpr={[1, 1.8]}>
@@ -46,21 +61,40 @@ export function RacingScene({ gameState, resetToken, onTelemetry }: Props) {
 
       <Suspense fallback={null}>
         <EnvironmentObjects />
-        <PlayerCar gameState={gameState} resetToken={resetToken} targetRef={targetRef} onTelemetry={onTelemetry} />
+        <PlayerCar
+          gameState={gameState}
+          resetToken={resetToken}
+          targetRef={targetRefP1}
+          onTelemetry={onTelemetryP1}
+          keymap={isMulti ? ARROW_KEYMAP : undefined}
+          carColor={isMulti ? '#ee2222' : undefined}
+        />
+        {isMulti && (
+          <PlayerCar
+            gameState={gameState}
+            resetToken={resetToken}
+            targetRef={targetRefP2}
+            onTelemetry={onTelemetryP2}
+            keymap={WASD_KEYMAP}
+            startPos={START_POSITION_P2}
+            carColor="#f5c542"
+          />
+        )}
       </Suspense>
 
       <Track />
-      <FollowCamera targetRef={targetRef} />
 
-      <EffectComposer>
-        <Bloom
-          intensity={0.3}
-          luminanceThreshold={0.85}
-          luminanceSmoothing={0.4}
-          mipmapBlur
-        />
-        <Vignette eskil={false} offset={0.15} darkness={0.4} />
-      </EffectComposer>
+      {isMulti ? (
+        <SplitScreenCamera targetRefP1={targetRefP1} targetRefP2={targetRefP2} />
+      ) : (
+        <>
+          <FollowCamera targetRef={targetRefP1} />
+          <EffectComposer>
+            <Bloom intensity={0.3} luminanceThreshold={0.85} luminanceSmoothing={0.4} mipmapBlur />
+            <Vignette eskil={false} offset={0.15} darkness={0.4} />
+          </EffectComposer>
+        </>
+      )}
     </Canvas>
   )
 }

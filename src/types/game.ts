@@ -2,12 +2,16 @@ import type { Vector3 } from 'three'
 
 export type GameState = 'idle' | 'running' | 'paused' | 'gameover'
 
+export type PlayerMode = 'single' | 'multi'
+
 export type ControlsState = {
   accelerate: boolean
   brake: boolean
   left: boolean
   right: boolean
 }
+
+export type KeyMap = Record<string, keyof ControlsState>
 
 export type Telemetry = {
   speedMps: number

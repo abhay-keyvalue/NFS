@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react'
+import type { Vector3 } from 'three'
 import type { ControlsState } from '../types/game'
 import { clamp } from '../utils/game'
 import { START_HEADING, START_POSITION } from '../utils/track'
@@ -19,17 +20,19 @@ const PHYSICS = {
   steeringSmooth: 6.2,
 }
 
-export function useCarPhysics() {
+export function useCarPhysics(startPosition?: Vector3) {
+  const origin = startPosition ?? START_POSITION
   const speedRef = useRef(0)
   const headingRef = useRef(START_HEADING)
   const steeringRef = useRef(0)
-  const positionRef = useRef(START_POSITION.clone())
+  const positionRef = useRef(origin.clone())
 
   const reset = useCallback(() => {
     speedRef.current = 0
     headingRef.current = START_HEADING
     steeringRef.current = 0
-    positionRef.current.copy(START_POSITION)
+    positionRef.current.copy(origin)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const step = useCallback((delta: number, controls: ControlsState): CarStep => {

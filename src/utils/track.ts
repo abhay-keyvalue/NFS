@@ -37,6 +37,9 @@ const startTangent = trackCurve.getTangentAt(0)
 export const START_POSITION = new Vector3(startPoint.x, startPoint.y + 0.35, startPoint.z)
 export const START_HEADING = Math.atan2(startTangent.z, startTangent.x)
 
+const p2Offset = trackCurve.getPointAt(0.985)
+export const START_POSITION_P2 = new Vector3(p2Offset.x, p2Offset.y + 0.35, p2Offset.z)
+
 export type TrackQuery = {
   closestPoint: Vector3
   tangent: Vector3
