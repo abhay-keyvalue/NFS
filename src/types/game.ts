@@ -19,4 +19,5 @@ export type Telemetry = {
 export type CameraTarget = {
   position: Vector3
   heading: number
+  shake: number
 }

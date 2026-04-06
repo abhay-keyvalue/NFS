@@ -19,6 +19,7 @@ export function RacingScene({ gameState, resetToken, onTelemetry }: Props) {
     () => ({
       position: START_POSITION.clone(),
       heading: START_HEADING,
+      shake: 0,
     }),
     [],
   )

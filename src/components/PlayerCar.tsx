@@ -78,6 +78,7 @@ export function PlayerCar({ gameState, resetToken, targetRef, onTelemetry }: Pro
     const pos = START_POSITION.clone()
     targetRef.current.position.copy(pos)
     targetRef.current.heading = headingRef.current
+    targetRef.current.shake = 0
     onTelemetry({
       speedMps: 0,
       lap: 1,
@@ -103,6 +104,8 @@ export function PlayerCar({ gameState, resetToken, targetRef, onTelemetry }: Pro
       if (!wallHitActiveRef.current) {
         collisionsRef.current += 1
         wallHitActiveRef.current = true
+        const impactForce = Math.min(Math.abs(speedRef.current) / 20, 1)
+        targetRef.current.shake = 0.5 + impactForce * 0.8
       }
       const pushDir = new Vector3(
         query.closestPoint.x - pos.x,

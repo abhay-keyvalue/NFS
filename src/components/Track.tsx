@@ -4,7 +4,7 @@ import { trackCurve, TRACK_HALF_WIDTH } from '../utils/track'
 
 const ROAD_SAMPLES = 400
 const CURB_WIDTH = 0.7
-const SHOULDER_WIDTH = 2.0
+const SHOULDER_WIDTH = 0.001
 
 function sampleTrackFrames(count: number) {
   const points: THREE.Vector3[] = []
@@ -202,28 +202,29 @@ function createCheckerTexture(): THREE.CanvasTexture {
   return tex
 }
 
-function buildBarrierGeometry(
+function buildFenceRailGeometry(
   frames: ReturnType<typeof sampleTrackFrames>,
   halfWidth: number,
   side: 1 | -1,
-  barrierHeight: number,
+  railY: number,
+  railThickness: number,
 ): THREE.BufferGeometry {
   const { points, normals } = frames
   const count = points.length
   const positions: number[] = []
   const indices: number[] = []
 
-  const offset = (halfWidth + CURB_WIDTH + SHOULDER_WIDTH + 0.3) * side
+  const offset = (halfWidth + CURB_WIDTH + SHOULDER_WIDTH) * side
+  const ht = railThickness / 2
 
   for (let i = 0; i < count; i++) {
     const p = points[i]
     const n = normals[i]
-
     const bx = p.x + n.x * offset
     const bz = p.z + n.z * offset
 
-    positions.push(bx, p.y - 0.1, bz)
-    positions.push(bx, p.y + barrierHeight, bz)
+    positions.push(bx, p.y + railY - ht, bz)
+    positions.push(bx, p.y + railY + ht, bz)
   }
 
   for (let i = 0; i < count - 1; i++) {
@@ -244,6 +245,42 @@ function buildBarrierGeometry(
   return geo
 }
 
+type FencePost = { position: [number, number, number]; height: number }
+
+function computeFencePosts(
+  frames: ReturnType<typeof sampleTrackFrames>,
+  halfWidth: number,
+  side: 1 | -1,
+  spacing: number,
+): FencePost[] {
+  const { points, normals } = frames
+  const offset = (halfWidth + CURB_WIDTH + SHOULDER_WIDTH + 0.3) * side
+  const posts: FencePost[] = []
+
+  for (let i = 0; i < points.length - 1; i += spacing) {
+    const p = points[i]
+    const n = normals[i]
+    const bx = p.x + n.x * offset
+    const bz = p.z + n.z * offset
+    const h = 1.3
+    posts.push({ position: [bx, p.y + h / 2 - 0.05, bz], height: h })
+  }
+  return posts
+}
+
+function FencePosts({ posts }: { posts: FencePost[] }) {
+  return (
+    <>
+      {posts.map((post, idx) => (
+        <mesh key={idx} position={post.position} castShadow>
+          <boxGeometry args={[0.15, post.height, 0.15]} />
+          <meshStandardMaterial color="#c8c8c8" roughness={0.5} metalness={0.4} />
+        </mesh>
+      ))}
+    </>
+  )
+}
+
 export function Track() {
   const frames = useMemo(() => sampleTrackFrames(ROAD_SAMPLES), [])
   const roadGeo = useMemo(() => buildRibbonGeometry(frames, TRACK_HALF_WIDTH, 0.01), [frames])
@@ -253,8 +290,12 @@ export function Track() {
   const rightShoulder = useMemo(() => buildShoulderGeometry(frames, TRACK_HALF_WIDTH, CURB_WIDTH, SHOULDER_WIDTH, 1, 0.005), [frames])
   const startLine = useMemo(() => buildStartLineGeometry(frames, TRACK_HALF_WIDTH), [frames])
   const checkerTex = useMemo(() => createCheckerTexture(), [])
-  const leftBarrier = useMemo(() => buildBarrierGeometry(frames, TRACK_HALF_WIDTH, -1, 1.2), [frames])
-  const rightBarrier = useMemo(() => buildBarrierGeometry(frames, TRACK_HALF_WIDTH, 1, 1.2), [frames])
+  const leftRailTop = useMemo(() => buildFenceRailGeometry(frames, TRACK_HALF_WIDTH, -1, 1.1, 0.12), [frames])
+  const leftRailMid = useMemo(() => buildFenceRailGeometry(frames, TRACK_HALF_WIDTH, -1, 0.6, 0.1), [frames])
+  const rightRailTop = useMemo(() => buildFenceRailGeometry(frames, TRACK_HALF_WIDTH, 1, 1.1, 0.12), [frames])
+  const rightRailMid = useMemo(() => buildFenceRailGeometry(frames, TRACK_HALF_WIDTH, 1, 0.6, 0.1), [frames])
+  const leftPosts = useMemo(() => computeFencePosts(frames, TRACK_HALF_WIDTH, -1, 8), [frames])
+  const rightPosts = useMemo(() => computeFencePosts(frames, TRACK_HALF_WIDTH, 1, 8), [frames])
 
   return (
     <group>
@@ -292,13 +333,23 @@ export function Track() {
       </mesh>
 
       <mesh>
-        <primitive object={leftBarrier} attach="geometry" />
-        <meshStandardMaterial color="#8a8a8a" roughness={0.7} metalness={0.3} />
+        <primitive object={leftRailTop} attach="geometry" />
+        <meshStandardMaterial color="#d0d0d0" roughness={0.4} metalness={0.5} />
       </mesh>
       <mesh>
-        <primitive object={rightBarrier} attach="geometry" />
-        <meshStandardMaterial color="#8a8a8a" roughness={0.7} metalness={0.3} />
+        <primitive object={leftRailMid} attach="geometry" />
+        <meshStandardMaterial color="#b8b8b8" roughness={0.45} metalness={0.45} />
       </mesh>
+      <mesh>
+        <primitive object={rightRailTop} attach="geometry" />
+        <meshStandardMaterial color="#d0d0d0" roughness={0.4} metalness={0.5} />
+      </mesh>
+      <mesh>
+        <primitive object={rightRailMid} attach="geometry" />
+        <meshStandardMaterial color="#b8b8b8" roughness={0.45} metalness={0.45} />
+      </mesh>
+      <FencePosts posts={leftPosts} />
+      <FencePosts posts={rightPosts} />
     </group>
   )
 }
