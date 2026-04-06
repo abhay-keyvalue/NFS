@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { HUD } from './components/HUD'
+import { Loader } from './components/Loader'
 import { RacingScene } from './components/RacingScene'
 import type { GameState, PlayerMode, Telemetry } from './types/game'
 
@@ -98,6 +99,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <Loader />
       <main className="game-layout">
         <section className="scene-area">
           <RacingScene
