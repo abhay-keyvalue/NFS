@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { Group } from 'three'
 import { Box3, Vector3 } from 'three'
 import type { Difficulty, PlayerMode } from '../types/game'
-import { startMusic, stopMusic } from '../utils/audio'
+import { isMusicPlaying, startMusic, stopMusic } from '../utils/audio'
 
 const CAR_MODEL = `${import.meta.env.BASE_URL}models/peugeot_205_gti.glb`
 
@@ -44,6 +44,7 @@ type Props = {
 
 export function HomeScreen({ onStart, totalLaps }: Props) {
   const [difficulty, setDifficulty] = useState<Difficulty>('medium')
+  const [musicOn, setMusicOn] = useState(false)
   const musicStarted = useRef(false)
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export function HomeScreen({ onStart, totalLaps }: Props) {
       if (!musicStarted.current) {
         musicStarted.current = true
         startMusic()
+        setMusicOn(true)
       }
     }
     window.addEventListener('click', handleInteraction, { once: true })
@@ -62,6 +64,16 @@ export function HomeScreen({ onStart, totalLaps }: Props) {
     }
   }, [])
 
+  const toggleMusic = () => {
+    if (isMusicPlaying()) {
+      stopMusic()
+      setMusicOn(false)
+    } else {
+      startMusic()
+      setMusicOn(true)
+    }
+  }
+
   const handleStart = (mode: PlayerMode, diff?: Difficulty) => {
     stopMusic()
     onStart(mode, diff)
@@ -70,6 +82,27 @@ export function HomeScreen({ onStart, totalLaps }: Props) {
   return (
     <div className="home-screen">
       <div className="home-bg-grid" />
+
+      <button
+        className="home-music-toggle"
+        onClick={toggleMusic}
+        aria-label={musicOn ? 'Mute music' : 'Play music'}
+        title={musicOn ? 'Mute music' : 'Play music'}
+      >
+        {musicOn ? (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+          </svg>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <line x1="23" y1="9" x2="17" y2="15" />
+            <line x1="17" y1="9" x2="23" y2="15" />
+          </svg>
+        )}
+      </button>
 
       <div className="home-layout">
         <div className="home-showcase">

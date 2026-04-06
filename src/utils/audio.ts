@@ -34,6 +34,10 @@ export function startMusic() {
   }, 16)
 }
 
+export function isMusicPlaying(): boolean {
+  return musicEl !== null && !musicEl.paused
+}
+
 export function stopMusic() {
   if (!musicEl) return
   const audio = musicEl

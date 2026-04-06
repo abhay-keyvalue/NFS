@@ -53,7 +53,7 @@ export function EnvironmentObjects() {
   const trees = useMemo(() => {
     const rng = seededRandom(42)
     const items: TreeProps[] = []
-    const treeCount = 80
+    const treeCount = 140
 
     for (let i = 0; i < treeCount; i++) {
       const t = rng()
@@ -62,7 +62,7 @@ export function EnvironmentObjects() {
       const right = new Vector3(-tangent.z, 0, tangent.x).normalize()
 
       const side = rng() > 0.5 ? 1 : -1
-      const lateralDist = TRACK_HALF_WIDTH + 10 + rng() * 25
+      const lateralDist = TRACK_HALF_WIDTH + 12 + rng() * 40
       const x = point.x + right.x * side * lateralDist
       const z = point.z + right.z * side * lateralDist
 
@@ -78,12 +78,12 @@ export function EnvironmentObjects() {
   const mountains = useMemo(() => {
     const items: { position: [number, number, number]; scale: [number, number, number]; color: string }[] = []
     const rng = seededRandom(99)
-    const center = new Vector3(10, 0, 40)
-    const mountainCount = 12
+    const center = new Vector3(20, 0, 100)
+    const mountainCount = 14
 
     for (let i = 0; i < mountainCount; i++) {
       const angle = (i / mountainCount) * Math.PI * 2 + rng() * 0.5
-      const dist = 120 + rng() * 60
+      const dist = 200 + rng() * 80
       const x = center.x + Math.cos(angle) * dist
       const z = center.z + Math.sin(angle) * dist
       const h = 15 + rng() * 30

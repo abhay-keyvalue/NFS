@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import * as THREE from 'three'
 import { trackCurve, TRACK_HALF_WIDTH } from '../utils/track'
 
-const ROAD_SAMPLES = 400
+const ROAD_SAMPLES = 600
 const CURB_WIDTH = 0.7
 const SHOULDER_WIDTH = 0.001
 
@@ -202,6 +202,61 @@ function createCheckerTexture(): THREE.CanvasTexture {
   return tex
 }
 
+function buildLineMarkingGeometry(
+  frames: ReturnType<typeof sampleTrackFrames>,
+  lateralOffset: number,
+  lineWidth: number,
+  yOffset: number,
+  dashLength: number,
+  gapLength: number,
+): THREE.BufferGeometry {
+  const { points, normals } = frames
+  const count = points.length
+  const positions: number[] = []
+  const colors: number[] = []
+  const indices: number[] = []
+
+  const hw = lineWidth / 2
+  const white = [1, 1, 1]
+  const road = [0.227, 0.227, 0.227]
+
+  for (let i = 0; i < count; i++) {
+    const p = points[i]
+    const n = normals[i]
+
+    const cx = p.x + n.x * lateralOffset
+    const cz = p.z + n.z * lateralOffset
+
+    positions.push(
+      cx - n.x * hw, p.y + yOffset, cz - n.z * hw,
+      cx + n.x * hw, p.y + yOffset, cz + n.z * hw,
+    )
+
+    let color: number[]
+    if (dashLength <= 0) {
+      color = white
+    } else {
+      const cycle = dashLength + gapLength
+      const pos = i % cycle
+      color = pos < dashLength ? white : road
+    }
+    colors.push(...color, ...color)
+  }
+
+  for (let i = 0; i < count - 1; i++) {
+    const a = i * 2
+    indices.push(a, a + 1, a + 2)
+    indices.push(a + 1, a + 3, a + 2)
+  }
+
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  geo.setIndex(indices)
+  geo.computeVertexNormals()
+  return geo
+}
+
 function buildFenceRailGeometry(
   frames: ReturnType<typeof sampleTrackFrames>,
   halfWidth: number,
@@ -297,29 +352,47 @@ export function Track() {
   const leftPosts = useMemo(() => computeFencePosts(frames, TRACK_HALF_WIDTH, -1, 8), [frames])
   const rightPosts = useMemo(() => computeFencePosts(frames, TRACK_HALF_WIDTH, 1, 8), [frames])
 
+  const centerLine = useMemo(() => buildLineMarkingGeometry(frames, 0, 0.18, 0.02, 6, 8), [frames])
+  const leftEdgeLine = useMemo(() => buildLineMarkingGeometry(frames, -(TRACK_HALF_WIDTH - 0.35), 0.15, 0.02, 0, 0), [frames])
+  const rightEdgeLine = useMemo(() => buildLineMarkingGeometry(frames, TRACK_HALF_WIDTH - 0.35, 0.15, 0.02, 0, 0), [frames])
+
   return (
     <group>
       {/* Ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.3, 0]}>
-        <planeGeometry args={[500, 500]} />
+        <planeGeometry args={[800, 800]} />
         <meshStandardMaterial color="#4a8c3a" roughness={1} />
       </mesh>
 
       {/* Water body inside the track loop */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-10, -0.18, 73]} scale={[35, 20, 1]}>
-        <circleGeometry args={[1, 48]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[20, -0.18, 110]} scale={[75, 50, 1]}>
+        <circleGeometry args={[1, 64]} />
         <meshStandardMaterial
           color="#1a6e9e"
-          roughness={0.12}
-          metalness={0.35}
+          roughness={0.08}
+          metalness={0.4}
           transparent
-          opacity={0.85}
+          opacity={0.88}
         />
       </mesh>
 
       <mesh receiveShadow>
         <primitive object={roadGeo} attach="geometry" />
         <meshStandardMaterial color="#3a3a3a" roughness={0.88} metalness={0.02} />
+      </mesh>
+
+      {/* Road markings */}
+      <mesh>
+        <primitive object={centerLine} attach="geometry" />
+        <meshStandardMaterial vertexColors roughness={0.5} />
+      </mesh>
+      <mesh>
+        <primitive object={leftEdgeLine} attach="geometry" />
+        <meshStandardMaterial vertexColors roughness={0.5} />
+      </mesh>
+      <mesh>
+        <primitive object={rightEdgeLine} attach="geometry" />
+        <meshStandardMaterial vertexColors roughness={0.5} />
       </mesh>
 
       <mesh receiveShadow>

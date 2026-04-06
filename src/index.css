@@ -794,6 +794,34 @@ body {
   background: rgba(248, 113, 113, 0.1);
 }
 
+.home-music-toggle {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--panel-border);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--accent);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.home-music-toggle:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  transform: scale(1.1);
+}
+
+.home-music-toggle:active {
+  transform: scale(0.95);
+}
+
 .home-footer {
   margin: 0;
   font-size: 0.78rem;

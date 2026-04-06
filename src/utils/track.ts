@@ -1,25 +1,49 @@
 import { CatmullRomCurve3, Vector3 } from 'three'
 
 const CONTROL_POINTS = [
+  // Start/finish straight
   new Vector3(0, 0, 0),
-  new Vector3(30, 0.5, 5),
-  new Vector3(55, 2, 25),
-  new Vector3(70, 4, 55),
-  new Vector3(60, 3, 85),
-  new Vector3(30, 1.5, 100),
-  new Vector3(0, 0, 90),
-  new Vector3(-25, -0.5, 65),
-  new Vector3(-35, 1, 40),
-  new Vector3(-50, 3.5, 15),
-  new Vector3(-50, 2, -10),
-  new Vector3(-35, 1, -25),
-  new Vector3(-15, 0.3, -20),
+  new Vector3(50, 0.3, 3),
+  new Vector3(100, 0.5, 8),
+  // T1 wide right
+  new Vector3(138, 1.2, 30),
+  new Vector3(152, 2, 60),
+  // Gentle straight
+  new Vector3(145, 2.8, 90),
+  // T3 wide sweeping turn
+  new Vector3(130, 3.2, 115),
+  new Vector3(105, 3.5, 135),
+  new Vector3(75, 3.2, 148),
+  // T4-T5 gentle S-curves
+  new Vector3(52, 3, 168),
+  new Vector3(58, 3.3, 192),
+  new Vector3(42, 3.8, 215),
+  // T6 sweeping left
+  new Vector3(10, 4.2, 238),
+  new Vector3(-30, 4, 240),
+  new Vector3(-62, 3.5, 222),
+  // Back straight
+  new Vector3(-85, 3, 185),
+  new Vector3(-98, 2.5, 145),
+  // T7 gentle right
+  new Vector3(-95, 2.8, 110),
+  new Vector3(-82, 3.2, 80),
+  // T8 smooth chicane
+  new Vector3(-88, 3.5, 55),
+  new Vector3(-76, 3.8, 35),
+  // T9 wide left sweeper
+  new Vector3(-88, 3.2, 10),
+  new Vector3(-75, 2.5, -10),
+  // T10 gentle return to start
+  new Vector3(-52, 1.5, -25),
+  new Vector3(-28, 0.8, -20),
+  new Vector3(-12, 0.3, -10),
 ]
 
-export const trackCurve = new CatmullRomCurve3(CONTROL_POINTS, true, 'catmullrom', 0.5)
+export const trackCurve = new CatmullRomCurve3(CONTROL_POINTS, true, 'catmullrom', 0.65)
 
 export const TRACK_HALF_WIDTH = 7
-export const TRACK_SAMPLE_COUNT = 600
+export const TRACK_SAMPLE_COUNT = 800
 
 const sampledPoints: Vector3[] = []
 const sampledTangents: Vector3[] = []
