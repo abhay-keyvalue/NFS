@@ -87,7 +87,7 @@ export function HomeScreen({ onStart, totalLaps }: Props) {
               <ambientLight intensity={0.5} />
               <directionalLight position={[5, 8, 5]} intensity={1.8} />
               <directionalLight position={[-3, 4, -2]} intensity={0.4} color="#8ab4f8" />
-              <Suspense fallback={<div/>}>
+              <Suspense fallback={null}>
                 <RotatingCar />
               </Suspense>
             </Canvas>
