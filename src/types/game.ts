@@ -1,6 +1,6 @@
 import type { Vector3 } from 'three'
 
-export type GameState = 'idle' | 'running' | 'paused' | 'gameover'
+export type GameState = 'idle' | 'countdown' | 'running' | 'paused' | 'gameover'
 
 export type PlayerMode = 'single' | 'multi'
 

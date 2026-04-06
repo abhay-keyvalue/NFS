@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { HUD } from './components/HUD'
 import { Loader } from './components/Loader'
 import { RacingScene } from './components/RacingScene'
@@ -10,6 +10,7 @@ export default function App() {
   const [gameState, setGameState] = useState<GameState>('idle')
   const [playerMode, setPlayerMode] = useState<PlayerMode>('single')
   const [winner, setWinner] = useState<1 | 2 | null>(null)
+  const [countdownNum, setCountdownNum] = useState(0)
 
   const [speedKmhP1, setSpeedKmhP1] = useState(0)
   const [lapP1, setLapP1] = useState(1)
@@ -21,6 +22,28 @@ export default function App() {
 
   const [elapsedMs, setElapsedMs] = useState(0)
   const [resetToken, setResetToken] = useState(0)
+  const countdownTimer = useRef<number>(0)
+
+  useEffect(() => {
+    if (gameState !== 'countdown') return
+
+    setCountdownNum(3)
+    let count = 3
+
+    countdownTimer.current = window.setInterval(() => {
+      count -= 1
+      if (count > 0) {
+        setCountdownNum(count)
+      } else if (count === 0) {
+        setCountdownNum(0)
+      } else {
+        window.clearInterval(countdownTimer.current)
+        setGameState('running')
+      }
+    }, 1000)
+
+    return () => window.clearInterval(countdownTimer.current)
+  }, [gameState])
 
   useEffect(() => {
     if (gameState !== 'running') {
@@ -73,6 +96,7 @@ export default function App() {
     setCollisionsP2(0)
     setElapsedMs(0)
     setWinner(null)
+    setCountdownNum(0)
     setResetToken((v) => v + 1)
   }, [])
 
@@ -81,7 +105,7 @@ export default function App() {
       resetRace()
     }
     setPlayerMode(mode)
-    setGameState('running')
+    setGameState('countdown')
   }, [gameState, resetRace])
 
   const togglePause = useCallback(() => {
@@ -122,6 +146,7 @@ export default function App() {
           collisionsP1={collisionsP1}
           collisionsP2={collisionsP2}
           gameState={gameState}
+          countdownNum={countdownNum}
           winner={winner}
           onStart={start}
           onPauseToggle={togglePause}

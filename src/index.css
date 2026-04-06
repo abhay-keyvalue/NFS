@@ -420,6 +420,49 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Countdown */
+.countdown-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.countdown-number {
+  font-size: clamp(5rem, 15vw, 10rem);
+  font-weight: 900;
+  color: #fff;
+  text-shadow:
+    0 0 30px rgba(56, 189, 248, 0.7),
+    0 0 60px rgba(56, 189, 248, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.6);
+  animation: countdown-pop 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  letter-spacing: 0.04em;
+}
+
+@keyframes countdown-pop {
+  0% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+
 @media (max-width: 900px) {
   .hud-stats {
     min-width: 280px;

@@ -106,7 +106,16 @@ export function PlayerCar({
   }, [resetToken])
 
   useFrame((_, delta) => {
-    if (gameState !== 'running' || !carRef.current) {
+    if (!carRef.current) return
+
+    if (gameState === 'countdown') {
+      const revIntensity = 0.008
+      carRef.current.position.x += (Math.random() - 0.5) * revIntensity
+      carRef.current.position.z += (Math.random() - 0.5) * revIntensity
+      return
+    }
+
+    if (gameState !== 'running') {
       return
     }
 

@@ -12,6 +12,7 @@ type Props = {
   collisionsP1: number
   collisionsP2: number
   gameState: GameState
+  countdownNum: number
   winner: 1 | 2 | null
   onStart: (mode: PlayerMode) => void
   onPauseToggle: () => void
@@ -29,13 +30,15 @@ export function HUD({
   collisionsP1,
   collisionsP2,
   gameState,
+  countdownNum,
   winner,
   onStart,
   onPauseToggle,
   onReset,
 }: Props) {
   const isMulti = playerMode === 'multi'
-  const isRunningMulti = isMulti && (gameState === 'running' || gameState === 'paused')
+  const isActive = gameState === 'running' || gameState === 'paused' || gameState === 'countdown'
+  const isRunningMulti = isMulti && isActive
 
   return (
     <div className={`hud-root ${isRunningMulti ? 'hud-split' : ''}`}>
@@ -46,12 +49,11 @@ export function HUD({
         </>
       )}
 
-      {/* In split mode: timer in top area, P1 stats bottom-left, P2 stats bottom-right */}
       {isRunningMulti && (
         <div className="hud-panel hud-top-timer">
           <Stat label="Timer" value={formatTime(elapsedMs)} />
           <div className="hud-buttons-inline">
-            <button className="action-btn action-btn-sm" onClick={onPauseToggle}>
+            <button className="action-btn action-btn-sm" onClick={onPauseToggle} disabled={gameState === 'countdown'}>
               {gameState === 'paused' ? 'Resume' : 'Pause'}
             </button>
             <button className="action-btn action-btn-sm danger" onClick={onReset}>
@@ -83,7 +85,7 @@ export function HUD({
           <div className="hud-buttons">
             <button
               className="action-btn"
-              disabled={gameState === 'idle' || gameState === 'gameover'}
+              disabled={gameState === 'idle' || gameState === 'gameover' || gameState === 'countdown'}
               onClick={onPauseToggle}
             >
               {gameState === 'paused' ? 'Continue' : 'Pause'}
@@ -92,6 +94,14 @@ export function HUD({
               Reset
             </button>
           </div>
+        </div>
+      )}
+
+      {gameState === 'countdown' && (
+        <div className="countdown-overlay">
+          <span key={countdownNum} className="countdown-number">
+            {countdownNum > 0 ? countdownNum : 'GO!'}
+          </span>
         </div>
       )}
 
