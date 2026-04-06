@@ -4,6 +4,7 @@ import { Suspense, useMemo, useRef } from 'react'
 import type { CameraTarget, GameState, PlayerMode, Telemetry } from '../types/game'
 import { START_HEADING, START_POSITION, START_POSITION_P2 } from '../utils/track'
 import { ARROW_KEYMAP, WASD_KEYMAP } from '../hooks/useKeyboardControls'
+import { AICar } from './AICar'
 import { EnvironmentObjects } from './EnvironmentObjects'
 import { FollowCamera, SplitScreenCamera } from './FollowCamera'
 import { PlayerCar } from './PlayerCar'
@@ -39,6 +40,7 @@ export function RacingScene({ gameState, resetToken, playerMode, onTelemetryP1, 
   const targetRefP2 = useRef<CameraTarget>(initialTargetP2)
 
   const isMulti = playerMode === 'multi'
+  const isAI = playerMode === 'ai'
 
   return (
     <Canvas shadows camera={{ position: [START_POSITION.x - 10, START_POSITION.y + 6, START_POSITION.z - 10], fov: 55 }} dpr={[1, 1.8]}>
@@ -67,7 +69,7 @@ export function RacingScene({ gameState, resetToken, playerMode, onTelemetryP1, 
           targetRef={targetRefP1}
           onTelemetry={onTelemetryP1}
           keymap={isMulti ? ARROW_KEYMAP : undefined}
-          carColor={isMulti ? '#ee2222' : undefined}
+          carColor={isMulti ? '#ee2222' : isAI ? '#ee2222' : undefined}
         />
         {isMulti && (
           <PlayerCar
@@ -78,6 +80,14 @@ export function RacingScene({ gameState, resetToken, playerMode, onTelemetryP1, 
             keymap={WASD_KEYMAP}
             startPos={START_POSITION_P2}
             carColor="#f5c542"
+          />
+        )}
+        {isAI && (
+          <AICar
+            gameState={gameState}
+            resetToken={resetToken}
+            targetRef={targetRefP2}
+            onTelemetry={onTelemetryP2}
           />
         )}
       </Suspense>

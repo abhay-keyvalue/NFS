@@ -301,59 +301,169 @@ body {
   font-size: 0.58rem;
 }
 
-/* Mode selection */
-.mode-select {
-  max-width: 520px;
+/* AI label */
+.ai-label {
+  color: #60a5fa;
+  border-color: #60a5fa;
 }
 
-.mode-buttons {
+/* Home Screen */
+.home-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
   display: flex;
-  gap: 1rem;
+  align-items: center;
   justify-content: center;
-  margin-top: 0.5rem;
+  background: radial-gradient(ellipse at 30% 20%, #1a2744 0%, #0a0f1a 50%, #050810 100%);
+  overflow: hidden;
 }
 
-.mode-btn {
-  pointer-events: auto;
+.home-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  animation: home-grid-drift 20s linear infinite;
+}
+
+@keyframes home-grid-drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(60px, 60px); }
+}
+
+.home-content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
-  padding: 1.1rem 1.8rem;
-  border-radius: 12px;
-  border: 2px solid var(--panel-border);
-  background: rgba(15, 23, 36, 0.86);
+  gap: 2.5rem;
+  padding: 2rem;
+  animation: home-fade-in 0.6s ease-out both;
+}
+
+@keyframes home-fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.home-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.home-flag {
+  font-size: 3rem;
+  filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.5));
+}
+
+.home-title {
+  margin: 0;
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  background: linear-gradient(135deg, #fff 0%, #38bdf8 50%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+
+.home-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.home-modes {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.home-mode-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  min-width: 280px;
+  border: 1.5px solid var(--panel-border);
+  border-radius: 14px;
+  background: rgba(14, 25, 36, 0.7);
+  backdrop-filter: blur(6px);
   color: var(--text);
   cursor: pointer;
-  transition: transform 120ms ease, border-color 180ms ease, background 180ms ease;
-  min-width: 170px;
+  transition: transform 150ms ease, border-color 200ms ease, box-shadow 200ms ease;
+  text-align: left;
+  font-family: inherit;
 }
 
-.mode-btn:hover {
-  transform: translateY(-2px);
-  background: rgba(30, 43, 62, 0.96);
+.home-mode-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
 }
 
-.single-btn:hover {
+.home-mode-card:hover {
   border-color: var(--accent);
 }
 
-.multi-btn:hover {
+.home-mode-ai:hover {
+  border-color: #60a5fa;
+}
+
+.home-mode-multi:hover {
   border-color: #f87171;
 }
 
-.mode-icon {
+.home-mode-icon {
   font-size: 2rem;
+  flex-shrink: 0;
+  width: 2.8rem;
+  text-align: center;
 }
 
-.mode-title {
-  font-size: 1rem;
+.home-mode-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.home-mode-name {
+  font-size: 1.05rem;
   font-weight: 700;
 }
 
-.mode-desc {
-  font-size: 0.75rem;
+.home-mode-detail {
+  font-size: 0.78rem;
   color: var(--text-muted);
+}
+
+.home-mode-keys {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.home-footer {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  opacity: 0.6;
 }
 
 /* Loader */
@@ -469,12 +579,14 @@ body {
     grid-template-columns: repeat(2, minmax(110px, 1fr));
   }
 
-  .mode-buttons {
+  .home-modes {
     flex-direction: column;
     align-items: center;
   }
 
-  .mode-btn {
-    min-width: 200px;
+  .home-mode-card {
+    min-width: 260px;
+    width: 100%;
+    max-width: 340px;
   }
 }

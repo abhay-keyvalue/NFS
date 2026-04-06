@@ -37,6 +37,8 @@ export function HUD({
   onReset,
 }: Props) {
   const isMulti = playerMode === 'multi'
+  const isAI = playerMode === 'ai'
+  const hasOpponent = isMulti || isAI
   const isActive = gameState === 'running' || gameState === 'paused' || gameState === 'countdown'
   const isRunningMulti = isMulti && isActive
 
@@ -64,16 +66,22 @@ export function HUD({
       )}
 
       <div className={`hud-panel hud-stats ${isRunningMulti ? 'hud-stats-split-p1' : ''}`}>
-        {isMulti && <span className="player-label p1-label">P1 — Arrows</span>}
+        {hasOpponent && (
+          <span className="player-label p1-label">
+            {isAI ? 'You' : 'P1 — Arrows'}
+          </span>
+        )}
         <Stat label="Speed" value={`${Math.max(0, speedKmhP1).toFixed(0)} km/h`} />
         <Stat label="Lap" value={`${Math.min(lapP1, totalLaps)}/${totalLaps}`} />
         {!isRunningMulti && <Stat label="Timer" value={formatTime(elapsedMs)} />}
         <Stat label="Hits" value={String(collisionsP1)} />
       </div>
 
-      {isMulti && (
+      {hasOpponent && (
         <div className={`hud-panel hud-stats ${isRunningMulti ? 'hud-stats-split-p2' : 'hud-stats-p2'}`}>
-          <span className="player-label p2-label">P2 — WASD</span>
+          <span className={`player-label ${isAI ? 'ai-label' : 'p2-label'}`}>
+            {isAI ? 'AI Opponent' : 'P2 — WASD'}
+          </span>
           <Stat label="Speed" value={`${Math.max(0, speedKmhP2).toFixed(0)} km/h`} />
           <Stat label="Lap" value={`${Math.min(lapP2, totalLaps)}/${totalLaps}`} />
           <Stat label="Hits" value={String(collisionsP2)} />
@@ -105,38 +113,21 @@ export function HUD({
         </div>
       )}
 
-      {gameState === 'idle' && (
-        <div className="hud-overlay">
-          <div className="hud-overlay-card mode-select">
-            <h2>3D Racing Challenge</h2>
-            <p>Complete {totalLaps} laps as fast as you can!</p>
-            <div className="mode-buttons">
-              <button className="mode-btn single-btn" onClick={() => onStart('single')}>
-                <span className="mode-icon">🏎</span>
-                <span className="mode-title">Single Player</span>
-                <span className="mode-desc">Race against time</span>
-              </button>
-              <button className="mode-btn multi-btn" onClick={() => onStart('multi')}>
-                <span className="mode-icon">🏁</span>
-                <span className="mode-title">Multiplayer</span>
-                <span className="mode-desc">P1 Arrows vs P2 WASD</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {gameState === 'gameover' && (
         <div className="hud-overlay">
           <div className="hud-overlay-card">
             <h2>
-              {winner
-                ? `Player ${winner} Wins!`
-                : 'Race Complete'}
+              {isAI
+                ? winner === 1
+                  ? 'You Win!'
+                  : 'AI Wins!'
+                : winner
+                  ? `Player ${winner} Wins!`
+                  : 'Race Complete'}
             </h2>
             <p>
               Finished in {formatTime(elapsedMs)}
-              {winner === null && ` with ${collisionsP1} collisions.`}
+              {!hasOpponent && ` with ${collisionsP1} collisions.`}
             </p>
             <button className="action-btn primary" onClick={() => onStart(playerMode)}>
               Race Again

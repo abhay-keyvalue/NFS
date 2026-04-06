@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { HomeScreen } from './components/HomeScreen'
 import { HUD } from './components/HUD'
 import { Loader } from './components/Loader'
 import { RacingScene } from './components/RacingScene'
@@ -46,9 +47,7 @@ export default function App() {
   }, [gameState])
 
   useEffect(() => {
-    if (gameState !== 'running') {
-      return
-    }
+    if (gameState !== 'running') return
     const timer = window.setInterval(() => {
       setElapsedMs((t) => t + 100)
     }, 100)
@@ -120,6 +119,14 @@ export default function App() {
     resetRace()
     setGameState('idle')
   }, [resetRace])
+
+  if (gameState === 'idle') {
+    return (
+      <div className="app-shell">
+        <HomeScreen onStart={start} totalLaps={TOTAL_LAPS} />
+      </div>
+    )
+  }
 
   return (
     <div className="app-shell">
