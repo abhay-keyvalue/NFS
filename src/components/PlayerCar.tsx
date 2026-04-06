@@ -22,6 +22,8 @@ type GLTFResult = {
   scene: Group
 }
 
+const CAR_COLLISION_DIST = 3.5
+
 type Props = {
   gameState: GameState
   resetToken: number
@@ -30,6 +32,7 @@ type Props = {
   keymap?: KeyMap
   startPos?: Vector3
   carColor?: string
+  opponentRef?: MutableRefObject<CameraTarget>
 }
 
 export function PlayerCar({
@@ -40,6 +43,7 @@ export function PlayerCar({
   keymap = ALL_KEYS_KEYMAP,
   startPos,
   carColor,
+  opponentRef,
 }: Props) {
   const effectiveStart = startPos ?? START_POSITION
   const carRef = useRef<Group>(null)
@@ -47,6 +51,7 @@ export function PlayerCar({
   const lapDistRef = useRef(0)
   const collisionsRef = useRef(0)
   const wallHitActiveRef = useRef(false)
+  const carHitActiveRef = useRef(false)
   const telemetryTickRef = useRef(0)
   const prevPosRef = useRef(effectiveStart.clone())
 
@@ -89,6 +94,7 @@ export function PlayerCar({
     lapDistRef.current = 0
     collisionsRef.current = 0
     wallHitActiveRef.current = false
+    carHitActiveRef.current = false
     telemetryTickRef.current = 0
     prevPosRef.current.copy(effectiveStart)
 
@@ -144,6 +150,31 @@ export function PlayerCar({
       speedRef.current *= -0.15
     } else {
       wallHitActiveRef.current = false
+    }
+
+    if (opponentRef) {
+      const opp = opponentRef.current.position
+      const dx = pos.x - opp.x
+      const dz = pos.z - opp.z
+      const dist = Math.sqrt(dx * dx + dz * dz)
+
+      if (dist < CAR_COLLISION_DIST && dist > 0.01) {
+        const overlap = CAR_COLLISION_DIST - dist
+        const nx = dx / dist
+        const nz = dz / dist
+        pos.x += nx * overlap * 0.5
+        pos.z += nz * overlap * 0.5
+        speedRef.current *= 0.6
+
+        if (!carHitActiveRef.current) {
+          collisionsRef.current += 1
+          carHitActiveRef.current = true
+          const impactForce = Math.min(Math.abs(speedRef.current) / 20, 1)
+          targetRef.current.shake = 0.4 + impactForce * 0.5
+        }
+      } else {
+        carHitActiveRef.current = false
+      }
     }
 
     pos.y = query.closestPoint.y + 0.10

@@ -17,6 +17,7 @@ const AI_BASE_SPEED = 22
 const AI_SPEED_VARIATION = 4
 const AI_VARIATION_FREQ = 0.3
 const AI_LATERAL_OFFSET = 1.5
+const CAR_COLLISION_DIST = 3.5
 
 type GLTFResult = { scene: Group }
 
@@ -25,9 +26,10 @@ type Props = {
   resetToken: number
   targetRef: MutableRefObject<CameraTarget>
   onTelemetry: (telemetry: Telemetry) => void
+  opponentRef?: MutableRefObject<CameraTarget>
 }
 
-export function AICar({ gameState, resetToken, targetRef, onTelemetry }: Props) {
+export function AICar({ gameState, resetToken, targetRef, onTelemetry, opponentRef }: Props) {
   const carRef = useRef<Group>(null)
   const tRef = useRef(0.985)
   const lapRef = useRef(1)
@@ -36,6 +38,8 @@ export function AICar({ gameState, resetToken, targetRef, onTelemetry }: Props) 
   const speedRef = useRef(0)
   const prevPosRef = useRef(new Vector3())
   const timeRef = useRef(0)
+  const collisionsRef = useRef(0)
+  const carHitActiveRef = useRef(false)
 
   const gltf = useGLTF(CAR_MODEL) as GLTFResult
 
@@ -79,6 +83,8 @@ export function AICar({ gameState, resetToken, targetRef, onTelemetry }: Props) 
     speedRef.current = 0
     telemetryTickRef.current = 0
     timeRef.current = 0
+    collisionsRef.current = 0
+    carHitActiveRef.current = false
     prevPosRef.current.copy(startPos)
 
     targetRef.current.position.copy(startPos)
@@ -123,6 +129,29 @@ export function AICar({ gameState, resetToken, targetRef, onTelemetry }: Props) 
     pos.z += lateral.z * lateralWobble
     pos.y += 0.10
 
+    if (opponentRef) {
+      const opp = opponentRef.current.position
+      const dx = pos.x - opp.x
+      const dz = pos.z - opp.z
+      const dist = Math.sqrt(dx * dx + dz * dz)
+
+      if (dist < CAR_COLLISION_DIST && dist > 0.01) {
+        const overlap = CAR_COLLISION_DIST - dist
+        const nx = dx / dist
+        const nz = dz / dist
+        pos.x += nx * overlap * 0.5
+        pos.z += nz * overlap * 0.5
+        speedRef.current *= 0.7
+
+        if (!carHitActiveRef.current) {
+          collisionsRef.current += 1
+          carHitActiveRef.current = true
+        }
+      } else {
+        carHitActiveRef.current = false
+      }
+    }
+
     const heading = Math.atan2(tangent.z, tangent.x)
 
     lapDistRef.current += Math.abs(distThisFrame)
@@ -147,7 +176,7 @@ export function AICar({ gameState, resetToken, targetRef, onTelemetry }: Props) 
       onTelemetry({
         speedMps: currentSpeed,
         lap: lapRef.current,
-        collisions: 0,
+        collisions: collisionsRef.current,
         position: pos.clone(),
       })
     }

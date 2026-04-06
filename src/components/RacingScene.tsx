@@ -70,6 +70,7 @@ export function RacingScene({ gameState, resetToken, playerMode, onTelemetryP1, 
           onTelemetry={onTelemetryP1}
           keymap={isMulti ? ARROW_KEYMAP : undefined}
           carColor={isMulti ? '#ee2222' : isAI ? '#ee2222' : undefined}
+          opponentRef={(isMulti || isAI) ? targetRefP2 : undefined}
         />
         {isMulti && (
           <PlayerCar
@@ -80,6 +81,7 @@ export function RacingScene({ gameState, resetToken, playerMode, onTelemetryP1, 
             keymap={WASD_KEYMAP}
             startPos={START_POSITION_P2}
             carColor="#f5c542"
+            opponentRef={targetRefP1}
           />
         )}
         {isAI && (
@@ -88,6 +90,7 @@ export function RacingScene({ gameState, resetToken, playerMode, onTelemetryP1, 
             resetToken={resetToken}
             targetRef={targetRefP2}
             onTelemetry={onTelemetryP2}
+            opponentRef={targetRefP1}
           />
         )}
       </Suspense>
