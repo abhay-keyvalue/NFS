@@ -16,7 +16,7 @@ import {
   getClosestPointOnTrack,
 } from '../utils/track'
 
-const CAR_MODEL = '/models/peugeot_205_gti.glb'
+const CAR_MODEL = `${import.meta.env.BASE_URL}models/peugeot_205_gti.glb`
 
 type GLTFResult = {
   scene: Group
