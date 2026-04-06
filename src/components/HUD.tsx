@@ -14,8 +14,10 @@ type Props = {
   gameState: GameState
   countdownNum: number
   winner: 1 | 2 | null
+  showOverview: boolean
   onStart: (mode: PlayerMode, difficulty?: Difficulty) => void
   onPauseToggle: () => void
+  onToggleOverview: () => void
   onReset: () => void
 }
 
@@ -32,8 +34,10 @@ export function HUD({
   gameState,
   countdownNum,
   winner,
+  showOverview,
   onStart,
   onPauseToggle,
+  onToggleOverview,
   onReset,
 }: Props) {
   const isMulti = playerMode === 'multi'
@@ -46,7 +50,7 @@ export function HUD({
     <div className={`hud-root ${isRunningMulti ? 'hud-split' : ''}`}>
       {isRunningMulti && (
         <>
-          <div className="split-divider-h" />
+          {showOverview && <div className="split-divider-h" />}
           <div className="split-divider-v" />
         </>
       )}
@@ -55,6 +59,9 @@ export function HUD({
         <div className="hud-panel hud-top-timer">
           <Stat label="Timer" value={formatTime(elapsedMs)} />
           <div className="hud-buttons-inline">
+            <button className="action-btn action-btn-sm" onClick={onToggleOverview}>
+              {showOverview ? '⬆ Hide Overview' : '⬇ Show Overview'}
+            </button>
             <button className="action-btn action-btn-sm" onClick={onPauseToggle} disabled={gameState === 'countdown'}>
               {gameState === 'paused' ? 'Resume' : 'Pause'}
             </button>

@@ -367,18 +367,18 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  padding-bottom: 0.15rem;
-  border-bottom: 2px solid;
 }
 
 .p1-label {
   color: var(--accent);
   border-color: var(--accent);
+  margin-bottom: 2px;
 }
 
 .p2-label {
   color: #f87171;
   border-color: #f87171;
+  margin-bottom: 2px;
 }
 
 .hud-stats-p2 {
@@ -443,17 +443,18 @@ body {
   padding: 0.3rem 0.6rem !important;
 }
 
-/* Split-screen HUD stats — bottom half */
+/* Split-screen HUD stats */
 .hud-stats-split-p1,
 .hud-stats-split-p2 {
   position: absolute;
-  top: calc(50% + 0.5rem);
-  min-width: 0 !important;
-  width: calc(50% - 1.4rem);
-  grid-template-columns: repeat(3, 1fr) !important;
+  bottom: 0.4rem;
+  min-width: 150px !important;
+  width: auto;
+  max-width: calc(50% - 1.4rem);
+  grid-template-columns: repeat(3, auto) !important;
   padding: 0.4rem 0.55rem !important;
-  gap: 0.3rem 0.4rem !important;
-  font-size: 0.78rem;
+  gap: 0.15rem 0.35rem !important;
+  font-size: 0.7rem;
   border-radius: 10px;
 }
 

@@ -68,6 +68,7 @@ export function FollowCamera({ targetRef }: SingleProps) {
 type SplitProps = {
   targetRefP1: MutableRefObject<CameraTarget>
   targetRefP2: MutableRefObject<CameraTarget>
+  showOverview: boolean
 }
 
 const OVERVIEW_BEHIND = 22
@@ -78,7 +79,7 @@ const PLAYER_BEHIND = 14
 const PLAYER_HEIGHT = 7
 const PLAYER_FOV = 68
 
-export function SplitScreenCamera({ targetRefP1, targetRefP2 }: SplitProps) {
+export function SplitScreenCamera({ targetRefP1, targetRefP2, showOverview }: SplitProps) {
   const initializedRef = useRef(false)
 
   const camOverview = useMemo(() => new PerspectiveCamera(OVERVIEW_FOV, 1, 0.1, 500), [])
@@ -143,39 +144,50 @@ export function SplitScreenCamera({ targetRefP1, targetRefP2 }: SplitProps) {
     camP1.lookAt(lookP1)
     camP2.lookAt(lookP2)
 
-    // Three.js setViewport/setScissor expect CSS pixels (internally multiplied by DPR)
     const w = size.width
     const h = size.height
-    const halfH = Math.floor(h / 2)
     const halfW = Math.floor(w / 2)
-
-    camOverview.aspect = w / halfH
-    camOverview.updateProjectionMatrix()
-
-    const bottomAspect = halfW / halfH
-    camP1.aspect = bottomAspect
-    camP1.updateProjectionMatrix()
-    camP2.aspect = bottomAspect
-    camP2.updateProjectionMatrix()
 
     gl.setScissorTest(true)
 
-    // Top half: overview (WebGL y=0 is bottom, so top half starts at y=halfH)
-    gl.setViewport(0, halfH, w, h - halfH)
-    gl.setScissor(0, halfH, w, h - halfH)
-    gl.render(scene, camOverview)
+    if (showOverview) {
+      const halfH = Math.floor(h / 2)
 
-    // Bottom-left: P2
-    gl.setViewport(0, 0, halfW, halfH)
-    gl.setScissor(0, 0, halfW, halfH)
-    gl.render(scene, camP2)
+      camOverview.aspect = w / halfH
+      camOverview.updateProjectionMatrix()
 
-    // Bottom-right: P1
-    gl.setViewport(halfW, 0, w - halfW, halfH)
-    gl.setScissor(halfW, 0, w - halfW, halfH)
-    gl.render(scene, camP1)
+      const bottomAspect = halfW / halfH
+      camP1.aspect = bottomAspect
+      camP1.updateProjectionMatrix()
+      camP2.aspect = bottomAspect
+      camP2.updateProjectionMatrix()
 
-    // Reset state for next frame
+      gl.setViewport(0, halfH, w, h - halfH)
+      gl.setScissor(0, halfH, w, h - halfH)
+      gl.render(scene, camOverview)
+
+      gl.setViewport(0, 0, halfW, halfH)
+      gl.setScissor(0, 0, halfW, halfH)
+      gl.render(scene, camP2)
+
+      gl.setViewport(halfW, 0, w - halfW, halfH)
+      gl.setScissor(halfW, 0, w - halfW, halfH)
+      gl.render(scene, camP1)
+    } else {
+      camP1.aspect = halfW / h
+      camP1.updateProjectionMatrix()
+      camP2.aspect = halfW / h
+      camP2.updateProjectionMatrix()
+
+      gl.setViewport(0, 0, halfW, h)
+      gl.setScissor(0, 0, halfW, h)
+      gl.render(scene, camP2)
+
+      gl.setViewport(halfW, 0, w - halfW, h)
+      gl.setScissor(halfW, 0, w - halfW, h)
+      gl.render(scene, camP1)
+    }
+
     gl.setScissorTest(false)
     gl.setViewport(0, 0, w, h)
   }, 1)

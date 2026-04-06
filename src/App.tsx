@@ -24,6 +24,7 @@ export default function App() {
 
   const [elapsedMs, setElapsedMs] = useState(0)
   const [resetToken, setResetToken] = useState(0)
+  const [showOverview, setShowOverview] = useState(true)
   const countdownTimer = useRef<number>(0)
 
   useEffect(() => {
@@ -109,6 +110,10 @@ export default function App() {
     setGameState('countdown')
   }, [gameState, resetRace])
 
+  const toggleOverview = useCallback(() => {
+    setShowOverview((v) => !v)
+  }, [])
+
   const togglePause = useCallback(() => {
     setGameState((cur) => {
       if (cur === 'running') return 'paused'
@@ -140,6 +145,7 @@ export default function App() {
             resetToken={resetToken}
             playerMode={playerMode}
             difficulty={difficulty}
+            showOverview={showOverview}
             onTelemetryP1={onTelemetryP1}
             onTelemetryP2={onTelemetryP2}
           />
@@ -158,8 +164,10 @@ export default function App() {
           gameState={gameState}
           countdownNum={countdownNum}
           winner={winner}
+          showOverview={showOverview}
           onStart={start}
           onPauseToggle={togglePause}
+          onToggleOverview={toggleOverview}
           onReset={reset}
         />
       </main>

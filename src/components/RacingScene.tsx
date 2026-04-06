@@ -15,11 +15,12 @@ type Props = {
   resetToken: number
   playerMode: PlayerMode
   difficulty: Difficulty
+  showOverview: boolean
   onTelemetryP1: (telemetry: Telemetry) => void
   onTelemetryP2: (telemetry: Telemetry) => void
 }
 
-export function RacingScene({ gameState, resetToken, playerMode, difficulty, onTelemetryP1, onTelemetryP2 }: Props) {
+export function RacingScene({ gameState, resetToken, playerMode, difficulty, showOverview, onTelemetryP1, onTelemetryP2 }: Props) {
   const initialTarget = useMemo<CameraTarget>(
     () => ({
       position: START_POSITION.clone(),
@@ -100,7 +101,7 @@ export function RacingScene({ gameState, resetToken, playerMode, difficulty, onT
       <Track />
 
       {isMulti ? (
-        <SplitScreenCamera targetRefP1={targetRefP1} targetRefP2={targetRefP2} />
+        <SplitScreenCamera targetRefP1={targetRefP1} targetRefP2={targetRefP2} showOverview={showOverview} />
       ) : (
         <>
           <FollowCamera targetRef={targetRefP1} />
