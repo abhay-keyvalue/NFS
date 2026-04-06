@@ -88,20 +88,18 @@ export function HUD({
         </div>
       )}
 
-      {!isRunningMulti && (
-        <div className="hud-panel hud-controls">
-          <div className="hud-buttons">
-            <button
-              className="action-btn"
-              disabled={gameState === 'idle' || gameState === 'gameover' || gameState === 'countdown'}
-              onClick={onPauseToggle}
-            >
-              {gameState === 'paused' ? 'Continue' : 'Pause'}
-            </button>
-            <button className="action-btn danger" onClick={onReset}>
-              Exit
-            </button>
-          </div>
+      {!isRunningMulti && gameState !== 'gameover' && (
+        <div className="hud-bottom-actions">
+          <button
+            className="hud-action-pill"
+            disabled={gameState === 'idle' || gameState === 'countdown'}
+            onClick={onPauseToggle}
+          >
+            {gameState === 'paused' ? '▶ Resume' : '⏸ Pause'}
+          </button>
+          <button className="hud-action-pill hud-action-exit" onClick={onReset}>
+            ✕ Exit
+          </button>
         </div>
       )}
 
@@ -113,28 +111,49 @@ export function HUD({
         </div>
       )}
 
-      {gameState === 'gameover' && (
-        <div className="hud-overlay">
-          <div className="hud-overlay-card">
-            <h2>
-              {isAI
-                ? winner === 1
-                  ? 'You Win!'
-                  : 'AI Wins!'
-                : winner
-                  ? `Player ${winner} Wins!`
-                  : 'Race Complete'}
-            </h2>
-            <p>
-              Finished in {formatTime(elapsedMs)}
-              {!hasOpponent && ` with ${collisionsP1} collisions.`}
-            </p>
-            <button className="action-btn primary" onClick={() => onStart(playerMode)}>
-              Race Again
-            </button>
+      {gameState === 'gameover' && (() => {
+        const playerWon = isAI ? winner === 1 : winner === 1 || winner === null
+        const title = isAI
+          ? winner === 1 ? 'You Win!' : 'AI Wins!'
+          : winner
+            ? `Player ${winner} Wins!`
+            : 'Race Complete'
+
+        return (
+          <div className="hud-overlay">
+            <div className={`gameover-card ${playerWon ? 'gameover-win' : 'gameover-lose'}`}>
+              <div className="gameover-icon">{playerWon ? '🏆' : '💀'}</div>
+              <h2 className="gameover-title">{title}</h2>
+              <div className="gameover-stats">
+                <div className="gameover-stat">
+                  <span className="gameover-stat-label">Time</span>
+                  <span className="gameover-stat-value">{formatTime(elapsedMs)}</span>
+                </div>
+                <div className="gameover-stat">
+                  <span className="gameover-stat-label">Hits</span>
+                  <span className="gameover-stat-value">{collisionsP1}</span>
+                </div>
+                {hasOpponent && (
+                  <div className="gameover-stat">
+                    <span className="gameover-stat-label">Winner</span>
+                    <span className="gameover-stat-value">
+                      {isAI ? (winner === 1 ? 'You' : 'AI') : `P${winner}`}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="gameover-buttons">
+                <button className="gameover-btn gameover-btn-primary" onClick={() => onStart(playerMode)}>
+                  Race Again
+                </button>
+                <button className="gameover-btn gameover-btn-secondary" onClick={onReset}>
+                  Home
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {gameState === 'paused' && (
         <div className="hud-overlay">
