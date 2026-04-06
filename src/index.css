@@ -599,7 +599,7 @@ body {
 
 .home-panel {
   flex: 0 0 auto;
-  width: 360px;
+  width: 440px;
   display: flex;
   flex-direction: column;
   gap: 1.8rem;

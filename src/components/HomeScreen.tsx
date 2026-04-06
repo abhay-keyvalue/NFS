@@ -1,9 +1,10 @@
 import { useGLTF } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Suspense, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { Group } from 'three'
 import { Box3, Vector3 } from 'three'
 import type { Difficulty, PlayerMode } from '../types/game'
+import { startMusic, stopMusic } from '../utils/audio'
 
 const CAR_MODEL = `${import.meta.env.BASE_URL}models/peugeot_205_gti.glb`
 
@@ -43,6 +44,28 @@ type Props = {
 
 export function HomeScreen({ onStart, totalLaps }: Props) {
   const [difficulty, setDifficulty] = useState<Difficulty>('medium')
+  const musicStarted = useRef(false)
+
+  useEffect(() => {
+    const handleInteraction = () => {
+      if (!musicStarted.current) {
+        musicStarted.current = true
+        startMusic()
+      }
+    }
+    window.addEventListener('click', handleInteraction, { once: true })
+    window.addEventListener('keydown', handleInteraction, { once: true })
+    return () => {
+      window.removeEventListener('click', handleInteraction)
+      window.removeEventListener('keydown', handleInteraction)
+      stopMusic()
+    }
+  }, [])
+
+  const handleStart = (mode: PlayerMode, diff?: Difficulty) => {
+    stopMusic()
+    onStart(mode, diff)
+  }
 
   return (
     <div className="home-screen">
@@ -74,12 +97,12 @@ export function HomeScreen({ onStart, totalLaps }: Props) {
 
         <div className="home-panel">
           <div className="home-header">
-            <h1 className="home-title">NFS Racing</h1>
+            <h2 className="home-title"> Need For Speed</h2>
             <p className="home-subtitle">Complete {totalLaps} laps to win the race</p>
           </div>
 
           <div className="home-modes">
-            <button className="home-mode-card" onClick={() => onStart('single')}>
+            <button className="home-mode-card" onClick={() => handleStart('single')}>
               <div className="home-mode-icon">🏎️</div>
               <div className="home-mode-info">
                 <span className="home-mode-name">Solo Race</span>
@@ -89,7 +112,7 @@ export function HomeScreen({ onStart, totalLaps }: Props) {
             </button>
 
             <div className="home-mode-card home-mode-ai home-mode-card-ai-wrap">
-              <div className="home-mode-ai-top" onClick={() => onStart('ai', difficulty)}>
+              <div className="home-mode-ai-top" onClick={() => handleStart('ai', difficulty)}>
                 <div className="home-mode-icon">🤖</div>
                 <div className="home-mode-info">
                   <span className="home-mode-name">Play with AI</span>
@@ -113,7 +136,7 @@ export function HomeScreen({ onStart, totalLaps }: Props) {
               </div>
             </div>
 
-            <button className="home-mode-card home-mode-multi" onClick={() => onStart('multi')}>
+            <button className="home-mode-card home-mode-multi" onClick={() => handleStart('multi')}>
               <div className="home-mode-icon">👥</div>
               <div className="home-mode-info">
                 <span className="home-mode-name">Multiplayer</span>

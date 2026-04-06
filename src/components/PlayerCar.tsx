@@ -7,6 +7,7 @@ import { Box3, Color, Mesh, MeshStandardMaterial, Vector3 } from 'three'
 import { useCarPhysics } from '../hooks/useCarPhysics'
 import { useKeyboardControls, ALL_KEYS_KEYMAP } from '../hooks/useKeyboardControls'
 import type { CameraTarget, GameState, KeyMap, Telemetry } from '../types/game'
+import { EngineSound } from '../utils/audio'
 import { clamp } from '../utils/game'
 import {
   START_POSITION,
@@ -54,6 +55,15 @@ export function PlayerCar({
   const carHitActiveRef = useRef(false)
   const telemetryTickRef = useRef(0)
   const prevPosRef = useRef(effectiveStart.clone())
+
+  const engineRef = useRef<EngineSound | null>(null)
+
+  useEffect(() => {
+    const engine = new EngineSound()
+    engineRef.current = engine
+    engine.start()
+    return () => engine.stop()
+  }, [])
 
   const { controlsRef, resetControls } = useKeyboardControls(keymap)
   const { speedRef, headingRef, positionRef, step, reset } = useCarPhysics(effectiveStart)
@@ -118,6 +128,7 @@ export function PlayerCar({
       const revIntensity = 0.008
       carRef.current.position.x += (Math.random() - 0.5) * revIntensity
       carRef.current.position.z += (Math.random() - 0.5) * revIntensity
+      engineRef.current?.setRevving(true)
       return
     }
 
@@ -126,6 +137,7 @@ export function PlayerCar({
     }
 
     const { speed, heading } = step(delta, controlsRef.current)
+    engineRef.current?.update(speed)
     const pos = positionRef.current
 
     const query = getClosestPointOnTrack(pos)
