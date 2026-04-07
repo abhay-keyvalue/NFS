@@ -1495,6 +1495,13 @@ body {
   object-fit: cover;
 }
 
+.lb-avatar-placeholder {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--panel-border);
+}
+
 .lb-time {
   font-variant-numeric: tabular-nums;
   font-weight: 600;

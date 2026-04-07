@@ -21,6 +21,29 @@ const DIFFICULTIES = [
 
 const COFFEE_QR_CODE = 'https://github.com/abhay-keyvalue/NFS/blob/main/public/GooglePay_QR.jpg?raw=true'
 
+function formatRelativeDate(dateString: string): string {
+  const date = new Date(dateString)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const lastWeekStart = new Date(today)
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7)
+  
+  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  
+  if (dateOnly.getTime() === today.getTime()) {
+    return `Today ${time}`
+  } else if (dateOnly.getTime() === yesterday.getTime()) {
+    return `Yesterday ${time}`
+  } else if (dateOnly >= lastWeekStart) {
+    return `Last week ${time}`
+  } else {
+    return `${date.toLocaleDateString()} ${time}`
+  }
+}
+
 export function LeaderboardPage({ onBack }: Props) {
   const [mode, setMode] = useState('solo')
   const [difficulty, setDifficulty] = useState('')
@@ -137,14 +160,14 @@ export function LeaderboardPage({ onBack }: Props) {
                   <tr key={entry.id} className={entry.rank <= 3 ? `lb-rank-${entry.rank}` : ''}>
                     <td className="lb-rank">{entry.rank}</td>
                     <td className="lb-player">
-                      {entry.avatarUrl && (
+                      {entry.avatarUrl ? (
                         <img src={entry.avatarUrl} alt="" className="lb-avatar" referrerPolicy="no-referrer" />
-                      )}
+                      ) : <div className="lb-avatar-placeholder"/>}
                       <span>{entry.displayName}</span>
                     </td>
                     <td className="lb-time">{formatTime(entry.elapsedMs)}</td>
                     <td>{entry.collisions}</td>
-                    <td className="lb-date">{new Date(entry.createdAt).toLocaleDateString()}</td>
+                    <td className="lb-date">{formatRelativeDate(entry.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
