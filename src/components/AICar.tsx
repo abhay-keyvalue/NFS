@@ -21,10 +21,7 @@ const AI_PROFILES: Record<Difficulty, { baseSpeed: number; variation: number; wo
 }
 
 const AI_VARIATION_FREQ = 0.3
-const CAR_COLLISION_DIST = 2.0
-const _lateral = new Vector3()
-const _aiPos = new Vector3()
-const _telemetryPos = new Vector3()
+const CAR_COLLISION_DIST = 2.5
 
 type GLTFResult = { scene: Group }
 
@@ -95,8 +92,7 @@ export function AICar({ gameState, resetToken, targetRef, onTelemetry, opponentR
     targetRef.current.heading = 0
     targetRef.current.shake = 0
 
-    _telemetryPos.copy(startPos)
-    onTelemetry({ speedMps: 0, lap: 1, collisions: 0, position: _telemetryPos })
+    onTelemetry({ speedMps: 0, lap: 1, collisions: 0, position: startPos.clone() })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetToken])
 
@@ -128,13 +124,12 @@ export function AICar({ gameState, resetToken, targetRef, onTelemetry, opponentR
     const tangent = trackCurve.getTangentAt(tRef.current)
 
     const lateralWobble = Math.sin(timeRef.current * 0.7) * profile.wobble
-    _lateral.set(-tangent.z, 0, tangent.x).normalize()
+    const lateral = new Vector3(-tangent.z, 0, tangent.x).normalize()
 
-    _aiPos.copy(point)
-    _aiPos.x += _lateral.x * lateralWobble
-    _aiPos.z += _lateral.z * lateralWobble
-    _aiPos.y += 0.10
-    const pos = _aiPos
+    const pos = point.clone()
+    pos.x += lateral.x * lateralWobble
+    pos.z += lateral.z * lateralWobble
+    pos.y += 0.10
 
     if (opponentRef) {
       const opp = opponentRef.current.position
@@ -180,12 +175,11 @@ export function AICar({ gameState, resetToken, targetRef, onTelemetry, opponentR
     telemetryTickRef.current -= dt
     if (telemetryTickRef.current <= 0) {
       telemetryTickRef.current = 0.08
-      _telemetryPos.copy(pos)
       onTelemetry({
         speedMps: currentSpeed,
         lap: lapRef.current,
         collisions: collisionsRef.current,
-        position: _telemetryPos,
+        position: pos.clone(),
       })
     }
   })

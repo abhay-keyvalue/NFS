@@ -81,53 +81,36 @@ export type TrackQuery = {
   t: number
 }
 
-const _queryResult: TrackQuery = {
-  closestPoint: new Vector3(),
-  tangent: new Vector3(),
-  distance: 0,
-  t: 0,
-}
-
-/**
- * When hintT is provided, searches a narrow window (±SEARCH_WINDOW) around
- * the last known position instead of the full 800 samples. Falls back to
- * full scan on first call or when the car may have teleported.
- */
-const SEARCH_WINDOW = 40
-
-export function getClosestPointOnTrack(pos: Vector3, hintT?: number): TrackQuery {
+export function getClosestPointOnTrack(pos: Vector3): TrackQuery {
   let bestDist = Infinity
   let bestIdx = 0
 
-  if (hintT !== undefined) {
-    const hint = Math.round(hintT * TRACK_SAMPLE_COUNT)
-    for (let j = hint - SEARCH_WINDOW; j <= hint + SEARCH_WINDOW; j++) {
-      const i = ((j % TRACK_SAMPLE_COUNT) + TRACK_SAMPLE_COUNT) % TRACK_SAMPLE_COUNT
-      const dx = pos.x - sampledPoints[i].x
-      const dz = pos.z - sampledPoints[i].z
-      const d = dx * dx + dz * dz
-      if (d < bestDist) {
-        bestDist = d
-        bestIdx = i
-      }
-    }
-  } else {
-    for (let i = 0; i < TRACK_SAMPLE_COUNT; i++) {
-      const dx = pos.x - sampledPoints[i].x
-      const dz = pos.z - sampledPoints[i].z
-      const d = dx * dx + dz * dz
-      if (d < bestDist) {
-        bestDist = d
-        bestIdx = i
-      }
+  for (let i = 0; i < TRACK_SAMPLE_COUNT; i++) {
+    const dx = pos.x - sampledPoints[i].x
+    const dz = pos.z - sampledPoints[i].z
+    const d = dx * dx + dz * dz
+    if (d < bestDist) {
+      bestDist = d
+      bestIdx = i
     }
   }
 
-  _queryResult.closestPoint = sampledPoints[bestIdx]
-  _queryResult.tangent = sampledTangents[bestIdx]
-  _queryResult.distance = Math.sqrt(bestDist)
-  _queryResult.t = bestIdx / TRACK_SAMPLE_COUNT
-  return _queryResult
+  return {
+    closestPoint: sampledPoints[bestIdx],
+    tangent: sampledTangents[bestIdx],
+    distance: Math.sqrt(bestDist),
+    t: bestIdx / TRACK_SAMPLE_COUNT,
+  }
+}
+
+export function isOnTrack(pos: Vector3, halfWidth = TRACK_HALF_WIDTH): boolean {
+  const { distance } = getClosestPointOnTrack(pos)
+  return distance <= halfWidth
+}
+
+export function getTrackElevation(pos: Vector3): number {
+  const { closestPoint } = getClosestPointOnTrack(pos)
+  return closestPoint.y
 }
 
 const gatePoint = sampledPoints[0]
