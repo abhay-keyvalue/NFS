@@ -109,7 +109,6 @@ export function HomeScreen({ onStart, totalLaps }: Props) {
           <div className="home-car-canvas">
             <div className="home-car-loader">
               <div className="home-car-spinner" />
-              <span>Loading model...</span>
             </div>
             <Canvas
               camera={{ position: [0, 1.2, 5], fov: 40 }}
