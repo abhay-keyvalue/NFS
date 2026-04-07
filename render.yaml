@@ -1,0 +1,29 @@
+databases:
+  - name: nfs-game-db
+    plan: free
+    databaseName: nfs_game
+    user: nfs_user
+
+services:
+  - type: web
+    name: nfs-game-server
+    runtime: node
+    plan: free
+    rootDir: NFS/server
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nfs-game-db
+          property: connectionString
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://abhay-keyvalue.github.io
+      - key: PORT
+        value: "3001"
