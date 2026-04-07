@@ -23,7 +23,7 @@ type GLTFResult = {
   scene: Group
 }
 
-const CAR_COLLISION_DIST = 3.5
+const CAR_COLLISION_DIST = 2.5
 
 type Props = {
   gameState: GameState
@@ -64,6 +64,16 @@ export function PlayerCar({
     engine.start()
     return () => engine.stop()
   }, [])
+
+  useEffect(() => {
+    if (gameState === 'gameover' || gameState === 'paused') {
+      engineRef.current?.stop()
+    } else if (gameState === 'running' || gameState === 'countdown') {
+      if (engineRef.current && !engineRef.current.isRunning()) {
+        engineRef.current.start()
+      }
+    }
+  }, [gameState])
 
   const { controlsRef, resetControls } = useKeyboardControls(keymap)
   const { speedRef, headingRef, positionRef, step, reset } = useCarPhysics(effectiveStart)

@@ -144,6 +144,10 @@ export class EngineSound {
     }
   }
 
+  isRunning() {
+    return this.running
+  }
+
   stop() {
     if (!this.running) return
     this.running = false

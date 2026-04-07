@@ -21,7 +21,7 @@ const AI_PROFILES: Record<Difficulty, { baseSpeed: number; variation: number; wo
 }
 
 const AI_VARIATION_FREQ = 0.3
-const CAR_COLLISION_DIST = 3.5
+const CAR_COLLISION_DIST = 2.5
 
 type GLTFResult = { scene: Group }
 
