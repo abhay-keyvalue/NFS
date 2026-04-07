@@ -1,9 +1,12 @@
 import { useGLTF } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
+import { GoogleLogin } from '@react-oauth/google'
+import type { CredentialResponse } from '@react-oauth/google'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { Group } from 'three'
 import { Box3, Vector3 } from 'three'
 import type { Difficulty, PlayerMode } from '../types/game'
+import { useAuth } from '../contexts/AuthContext'
 import { isMusicPlaying, startMusic, stopMusic } from '../utils/audio'
 
 const CAR_MODEL = `${import.meta.env.BASE_URL}models/peugeot_205_gti.glb`
@@ -40,9 +43,12 @@ function RotatingCar() {
 type Props = {
   onStart: (mode: PlayerMode, difficulty?: Difficulty) => void
   totalLaps: number
+  onNavigate: (view: 'leaderboard' | 'profile') => void
 }
 
-export function HomeScreen({ onStart, totalLaps }: Props) {
+export function HomeScreen({ onStart, totalLaps, onNavigate }: Props) {
+  const { user, isAuthenticated, login, logout } = useAuth()
+  const [authError, setAuthError] = useState<string | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty>('medium')
   const [musicOn, setMusicOn] = useState(false)
   const musicStarted = useRef(false)
@@ -79,30 +85,66 @@ export function HomeScreen({ onStart, totalLaps }: Props) {
     onStart(mode, diff)
   }
 
+  const handleGoogleSuccess = async (response: CredentialResponse) => {
+    setAuthError(null)
+    if (response.credential) {
+      try {
+        await login(response.credential)
+      } catch {
+        setAuthError('Login failed. Please try again.')
+      }
+    }
+  }
+
   return (
     <div className="home-screen">
       <div className="home-bg-grid" />
 
-      <button
-        className="home-music-toggle"
-        onClick={toggleMusic}
-        aria-label={musicOn ? 'Mute music' : 'Play music'}
-        title={musicOn ? 'Mute music' : 'Play music'}
-      >
-        {musicOn ? (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-          </svg>
+      <div className="home-top-bar">
+        {isAuthenticated && user ? (
+          <div className="home-user-info">
+            {user.avatarUrl && (
+              <img src={user.avatarUrl} alt="" className="home-user-avatar" referrerPolicy="no-referrer" />
+            )}
+            <span className="home-user-name">{user.displayName}</span>
+            <button className="home-auth-btn home-auth-btn-logout" onClick={logout}>
+              Logout
+            </button>
+          </div>
         ) : (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            <line x1="23" y1="9" x2="17" y2="15" />
-            <line x1="17" y1="9" x2="23" y2="15" />
-          </svg>
+          <div className="home-auth-area">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setAuthError('Login failed')}
+              shape="pill"
+              theme="filled_black"
+              size="medium"
+            />
+            {authError && <span className="home-auth-error">{authError}</span>}
+          </div>
         )}
-      </button>
+
+        <button
+          className="home-music-toggle"
+          onClick={toggleMusic}
+          aria-label={musicOn ? 'Mute music' : 'Play music'}
+          title={musicOn ? 'Mute music' : 'Play music'}
+        >
+          {musicOn ? (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            </svg>
+          ) : (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <line x1="23" y1="9" x2="17" y2="15" />
+              <line x1="17" y1="9" x2="23" y2="15" />
+            </svg>
+          )}
+        </button>
+      </div>
 
       <div className="home-layout">
         <div className="home-showcase">
@@ -176,6 +218,25 @@ export function HomeScreen({ onStart, totalLaps }: Props) {
               </div>
               <span className="home-mode-keys">P1 Arrows / P2 WASD</span>
             </button>
+          </div>
+
+          <div className="home-nav-buttons">
+            <button className="home-nav-btn" onClick={() => onNavigate('leaderboard')}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 21h8M12 17v4M6 3h12l-2 8H8L6 3z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+              Leaderboard
+            </button>
+            {isAuthenticated && (
+              <button className="home-nav-btn" onClick={() => onNavigate('profile')}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                My Profile
+              </button>
+            )}
           </div>
 
           <p className="home-footer">Use keyboard to control your car. Avoid the barriers!</p>

@@ -1,19 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { HomeScreen } from './components/HomeScreen'
 import { HUD } from './components/HUD'
+import { LeaderboardPage } from './components/LeaderboardPage'
 import { Loader } from './components/Loader'
+import { ProfilePage } from './components/ProfilePage'
 import { RacingScene } from './components/RacingScene'
 import { TouchControls } from './components/TouchControls'
-import type { Difficulty, GameState, PlayerMode, Telemetry } from './types/game'
+import { useAuth } from './contexts/AuthContext'
+import { api } from './services/api'
+import type { Difficulty, GameState, PlayerMode, Telemetry, ViewState } from './types/game'
 
 const TOTAL_LAPS = 3
 
 export default function App() {
+  const { isAuthenticated } = useAuth()
+  const [viewState, setViewState] = useState<ViewState>('idle')
   const [gameState, setGameState] = useState<GameState>('idle')
   const [playerMode, setPlayerMode] = useState<PlayerMode>('single')
   const [difficulty, setDifficulty] = useState<Difficulty>('medium')
   const [winner, setWinner] = useState<1 | 2 | null>(null)
   const [countdownNum, setCountdownNum] = useState(0)
+  const [raceSaved, setRaceSaved] = useState(false)
+  const [saveMessage, setSaveMessage] = useState<string | null>(null)
 
   const [speedKmhP1, setSpeedKmhP1] = useState(0)
   const [lapP1, setLapP1] = useState(1)
@@ -89,6 +97,34 @@ export default function App() {
     setCollisionsP2(telemetry.collisions)
   }, [])
 
+  useEffect(() => {
+    if (gameState !== 'gameover' || raceSaved) return
+    if (!isAuthenticated) {
+      setSaveMessage('Login to save your records')
+      return
+    }
+
+    setRaceSaved(true)
+
+    const modeMap: Record<PlayerMode, string> = {
+      single: 'solo',
+      ai: 'ai',
+      multi: 'multiplayer',
+    }
+
+    api.games
+      .save({
+        gameMode: modeMap[playerMode],
+        difficulty: playerMode === 'ai' ? difficulty : null,
+        totalLaps: TOTAL_LAPS,
+        elapsedMs,
+        collisions: collisionsP1,
+        won: playerMode === 'single' ? null : winner === 1,
+      })
+      .then(() => setSaveMessage('Race saved!'))
+      .catch(() => setSaveMessage('Failed to save race'))
+  }, [gameState, isAuthenticated, raceSaved, playerMode, difficulty, elapsedMs, collisionsP1, winner])
+
   const resetRace = useCallback(() => {
     setSpeedKmhP1(0)
     setLapP1(1)
@@ -100,6 +136,8 @@ export default function App() {
     setWinner(null)
     setCountdownNum(0)
     setResetToken((v) => v + 1)
+    setRaceSaved(false)
+    setSaveMessage(null)
   }, [])
 
   const start = useCallback((mode: PlayerMode, diff?: Difficulty) => {
@@ -109,6 +147,7 @@ export default function App() {
     setPlayerMode(mode)
     if (diff) setDifficulty(diff)
     setGameState('countdown')
+    setViewState('countdown')
   }, [gameState, resetRace])
 
   const toggleOverview = useCallback(() => {
@@ -126,12 +165,37 @@ export default function App() {
   const reset = useCallback(() => {
     resetRace()
     setGameState('idle')
+    setViewState('idle')
   }, [resetRace])
+
+  const navigateTo = useCallback((view: 'leaderboard' | 'profile') => {
+    setViewState(view)
+  }, [])
+
+  const navigateHome = useCallback(() => {
+    setViewState('idle')
+  }, [])
+
+  if (viewState === 'leaderboard') {
+    return (
+      <div className="app-shell">
+        <LeaderboardPage onBack={navigateHome} />
+      </div>
+    )
+  }
+
+  if (viewState === 'profile') {
+    return (
+      <div className="app-shell">
+        <ProfilePage onBack={navigateHome} />
+      </div>
+    )
+  }
 
   if (gameState === 'idle') {
     return (
       <div className="app-shell">
-        <HomeScreen onStart={start} totalLaps={TOTAL_LAPS} />
+        <HomeScreen onStart={start} totalLaps={TOTAL_LAPS} onNavigate={navigateTo} />
       </div>
     )
   }
@@ -166,6 +230,7 @@ export default function App() {
           countdownNum={countdownNum}
           winner={winner}
           showOverview={showOverview}
+          saveMessage={saveMessage}
           onStart={start}
           onPauseToggle={togglePause}
           onToggleOverview={toggleOverview}

@@ -15,6 +15,7 @@ type Props = {
   countdownNum: number
   winner: 1 | 2 | null
   showOverview: boolean
+  saveMessage: string | null
   onStart: (mode: PlayerMode, difficulty?: Difficulty) => void
   onPauseToggle: () => void
   onToggleOverview: () => void
@@ -35,6 +36,7 @@ export function HUD({
   countdownNum,
   winner,
   showOverview,
+  saveMessage,
   onStart,
   onPauseToggle,
   onToggleOverview,
@@ -149,6 +151,9 @@ export function HUD({
                   </div>
                 )}
               </div>
+              {saveMessage && (
+                <p className="gameover-save-msg">{saveMessage}</p>
+              )}
               <div className="gameover-buttons">
                 <button className="gameover-btn gameover-btn-primary" onClick={() => onStart(playerMode)}>
                   Race Again

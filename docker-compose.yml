@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nfs-postgres
+    environment:
+      POSTGRES_DB: nfs_game
+      POSTGRES_USER: nfs_user
+      POSTGRES_PASSWORD: nfs_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nfs_user -d nfs_game"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: nfs-server
+    environment:
+      DATABASE_URL: postgresql://nfs_user:nfs_password@postgres:5432/nfs_game
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
+      PORT: "3001"
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      NODE_ENV: development
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./server/src:/app/src
+    command: npm run dev
+
+volumes:
+  pgdata:
