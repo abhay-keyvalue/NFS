@@ -23,7 +23,9 @@ type GLTFResult = {
   scene: Group
 }
 
-const CAR_COLLISION_DIST = 2.5
+const CAR_COLLISION_DIST = 2.0
+const _pushDir = new Vector3()
+const _telemetryPos = new Vector3()
 
 type Props = {
   gameState: GameState
@@ -55,6 +57,7 @@ export function PlayerCar({
   const carHitActiveRef = useRef(false)
   const telemetryTickRef = useRef(0)
   const prevPosRef = useRef(effectiveStart.clone())
+  const lastTrackTRef = useRef<number | undefined>(undefined)
 
   const engineRef = useRef<EngineSound | null>(null)
 
@@ -116,6 +119,7 @@ export function PlayerCar({
     wallHitActiveRef.current = false
     carHitActiveRef.current = false
     telemetryTickRef.current = 0
+    lastTrackTRef.current = undefined
     prevPosRef.current.copy(effectiveStart)
 
     const pos = effectiveStart.clone()
@@ -150,7 +154,8 @@ export function PlayerCar({
     engineRef.current?.update(speed)
     const pos = positionRef.current
 
-    const query = getClosestPointOnTrack(pos)
+    const query = getClosestPointOnTrack(pos, lastTrackTRef.current)
+    lastTrackTRef.current = query.t
     const carRadius = 1.2
     const effectiveHalf = TRACK_HALF_WIDTH - carRadius
 
@@ -161,14 +166,14 @@ export function PlayerCar({
         const impactForce = Math.min(Math.abs(speedRef.current) / 20, 1)
         targetRef.current.shake = 0.5 + impactForce * 0.8
       }
-      const pushDir = new Vector3(
+      _pushDir.set(
         query.closestPoint.x - pos.x,
         0,
         query.closestPoint.z - pos.z,
       ).normalize()
       const overshoot = query.distance - effectiveHalf
-      pos.x += pushDir.x * overshoot * 0.6
-      pos.z += pushDir.z * overshoot * 0.6
+      pos.x += _pushDir.x * overshoot * 0.6
+      pos.z += _pushDir.z * overshoot * 0.6
       speedRef.current *= -0.15
     } else {
       wallHitActiveRef.current = false
@@ -221,11 +226,12 @@ export function PlayerCar({
     telemetryTickRef.current -= delta
     if (telemetryTickRef.current <= 0) {
       telemetryTickRef.current = 0.08
+      _telemetryPos.copy(pos)
       onTelemetry({
         speedMps: clamp(speedRef.current, -40, 40),
         lap: lapRef.current,
         collisions: collisionsRef.current,
-        position: pos.clone(),
+        position: _telemetryPos,
       })
     }
   })

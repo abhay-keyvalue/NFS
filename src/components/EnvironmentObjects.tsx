@@ -1,6 +1,15 @@
 import { Sky } from '@react-three/drei'
-import { useMemo } from 'react'
-import { Vector3 } from 'three'
+import { useEffect, useMemo, useRef } from 'react'
+import {
+  ConeGeometry,
+  CylinderGeometry,
+  Color,
+  InstancedMesh,
+  Matrix4,
+  MeshStandardMaterial,
+  Object3D,
+  Vector3,
+} from 'three'
 import { trackCurve, TRACK_HALF_WIDTH } from '../utils/track'
 
 function seededRandom(seed: number) {
@@ -11,97 +20,152 @@ function seededRandom(seed: number) {
   }
 }
 
-type TreeProps = {
-  position: [number, number, number]
+type TreeData = {
+  x: number
+  y: number
+  z: number
   scale: number
   trunkHeight: number
 }
 
-function Tree({ position, scale, trunkHeight }: TreeProps) {
-  return (
-    <group position={position} scale={scale}>
-      <mesh castShadow position={[0, trunkHeight / 2, 0]}>
-        <cylinderGeometry args={[0.15, 0.2, trunkHeight, 6]} />
-        <meshStandardMaterial color="#5c3a1e" roughness={0.9} />
-      </mesh>
-      <mesh castShadow position={[0, trunkHeight + 0.8, 0]}>
-        <coneGeometry args={[1.2, 2.4, 7]} />
-        <meshStandardMaterial color="#2d6b30" roughness={0.85} />
-      </mesh>
-      <mesh castShadow position={[0, trunkHeight + 1.8, 0]}>
-        <coneGeometry args={[0.85, 1.8, 7]} />
-        <meshStandardMaterial color="#3a8a3e" roughness={0.85} />
-      </mesh>
-    </group>
-  )
+const TREE_COUNT = 140
+
+function buildTreeData(): TreeData[] {
+  const rng = seededRandom(42)
+  const items: TreeData[] = []
+
+  for (let i = 0; i < TREE_COUNT; i++) {
+    const t = rng()
+    const point = trackCurve.getPointAt(t)
+    const tangent = trackCurve.getTangentAt(t)
+    const rx = -tangent.z
+    const rz = tangent.x
+    const len = Math.sqrt(rx * rx + rz * rz)
+    const nx = rx / len
+    const nz = rz / len
+
+    const side = rng() > 0.5 ? 1 : -1
+    const lateralDist = TRACK_HALF_WIDTH + 12 + rng() * 40
+
+    items.push({
+      x: point.x + nx * side * lateralDist,
+      y: point.y - 0.3,
+      z: point.z + nz * side * lateralDist,
+      scale: 0.7 + rng() * 0.9,
+      trunkHeight: 1.5 + rng() * 1.5,
+    })
+  }
+  return items
 }
 
-function Mountain({ position, scale, color }: {
-  position: [number, number, number]
-  scale: [number, number, number]
-  color: string
-}) {
-  return (
-    <mesh position={position} scale={scale}>
-      <coneGeometry args={[1, 1.6, 5]} />
-      <meshStandardMaterial color={color} roughness={1} flatShading />
-    </mesh>
-  )
-}
+const _dummy = new Object3D()
 
-export function EnvironmentObjects() {
-  const trees = useMemo(() => {
-    const rng = seededRandom(42)
-    const items: TreeProps[] = []
-    const treeCount = 140
+function InstancedTrees() {
+  const trees = useMemo(buildTreeData, [])
 
-    for (let i = 0; i < treeCount; i++) {
-      const t = rng()
-      const point = trackCurve.getPointAt(t)
-      const tangent = trackCurve.getTangentAt(t)
-      const right = new Vector3(-tangent.z, 0, tangent.x).normalize()
+  const trunkGeo = useMemo(() => new CylinderGeometry(0.15, 0.2, 1, 6), [])
+  const lowerConeGeo = useMemo(() => new ConeGeometry(1.2, 2.4, 7), [])
+  const upperConeGeo = useMemo(() => new ConeGeometry(0.85, 1.8, 7), [])
 
-      const side = rng() > 0.5 ? 1 : -1
-      const lateralDist = TRACK_HALF_WIDTH + 12 + rng() * 40
-      const x = point.x + right.x * side * lateralDist
-      const z = point.z + right.z * side * lateralDist
+  const trunkMat = useMemo(() => new MeshStandardMaterial({ color: '#5c3a1e', roughness: 0.9 }), [])
+  const lowerConeMat = useMemo(() => new MeshStandardMaterial({ color: '#2d6b30', roughness: 0.85 }), [])
+  const upperConeMat = useMemo(() => new MeshStandardMaterial({ color: '#3a8a3e', roughness: 0.85 }), [])
 
-      items.push({
-        position: [x, point.y - 0.3, z],
-        scale: 0.7 + rng() * 0.9,
-        trunkHeight: 1.5 + rng() * 1.5,
-      })
+  const trunkRef = useRef<InstancedMesh>(null)
+  const lowerConeRef = useRef<InstancedMesh>(null)
+  const upperConeRef = useRef<InstancedMesh>(null)
+
+  useEffect(() => {
+    const trunk = trunkRef.current
+    const lower = lowerConeRef.current
+    const upper = upperConeRef.current
+    if (!trunk || !lower || !upper) return
+
+    for (let i = 0; i < trees.length; i++) {
+      const { x, y, z, scale: s, trunkHeight: th } = trees[i]
+
+      _dummy.position.set(x, y + s * th * 0.5, z)
+      _dummy.scale.set(s, s * th, s)
+      _dummy.updateMatrix()
+      trunk.setMatrixAt(i, _dummy.matrix)
+
+      _dummy.position.set(x, y + s * (th + 0.8), z)
+      _dummy.scale.set(s, s, s)
+      _dummy.updateMatrix()
+      lower.setMatrixAt(i, _dummy.matrix)
+
+      _dummy.position.set(x, y + s * (th + 1.8), z)
+      _dummy.updateMatrix()
+      upper.setMatrixAt(i, _dummy.matrix)
     }
-    return items
-  }, [])
 
-  const mountains = useMemo(() => {
-    const items: { position: [number, number, number]; scale: [number, number, number]; color: string }[] = []
+    trunk.instanceMatrix.needsUpdate = true
+    lower.instanceMatrix.needsUpdate = true
+    upper.instanceMatrix.needsUpdate = true
+  }, [trees])
+
+  return (
+    <>
+      <instancedMesh ref={trunkRef} args={[trunkGeo, trunkMat, TREE_COUNT]} castShadow />
+      <instancedMesh ref={lowerConeRef} args={[lowerConeGeo, lowerConeMat, TREE_COUNT]} castShadow />
+      <instancedMesh ref={upperConeRef} args={[upperConeGeo, upperConeMat, TREE_COUNT]} castShadow />
+    </>
+  )
+}
+
+function Mountains() {
+  const geo = useMemo(() => new ConeGeometry(1, 1.6, 5), [])
+  const meshRef = useRef<InstancedMesh>(null)
+
+  const data = useMemo(() => {
     const rng = seededRandom(99)
     const center = new Vector3(20, 0, 100)
-    const mountainCount = 14
+    const count = 14
+    const items: { matrix: Matrix4; color: Color }[] = []
 
-    for (let i = 0; i < mountainCount; i++) {
-      const angle = (i / mountainCount) * Math.PI * 2 + rng() * 0.5
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2 + rng() * 0.5
       const dist = 200 + rng() * 80
       const x = center.x + Math.cos(angle) * dist
       const z = center.z + Math.sin(angle) * dist
       const h = 15 + rng() * 30
       const w = 20 + rng() * 25
 
-      const greenVal = Math.floor(60 + rng() * 40)
-      const blueVal = Math.floor(50 + rng() * 30)
-      const color = `rgb(${greenVal - 10}, ${greenVal}, ${blueVal})`
+      const greenVal = (60 + rng() * 40) / 255
+      const blueVal = (50 + rng() * 30) / 255
+      const redVal = (greenVal * 255 - 10) / 255
 
-      items.push({
-        position: [x, h * 0.3, z],
-        scale: [w, h, w],
-        color,
-      })
+      const mat = new Matrix4()
+      _dummy.position.set(x, h * 0.3, z)
+      _dummy.scale.set(w, h, w)
+      _dummy.updateMatrix()
+      mat.copy(_dummy.matrix)
+
+      items.push({ matrix: mat, color: new Color(redVal, greenVal, blueVal) })
     }
     return items
   }, [])
 
+  const material = useMemo(() => new MeshStandardMaterial({ roughness: 1, flatShading: true }), [])
+
+  useEffect(() => {
+    const mesh = meshRef.current
+    if (!mesh) return
+
+    for (let i = 0; i < data.length; i++) {
+      mesh.setMatrixAt(i, data[i].matrix)
+      mesh.setColorAt(i, data[i].color)
+    }
+    mesh.instanceMatrix.needsUpdate = true
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+  }, [data])
+
+  return (
+    <instancedMesh ref={meshRef} args={[geo, material, data.length]} />
+  )
+}
+
+export function EnvironmentObjects() {
   return (
     <>
       <Sky
@@ -111,14 +175,8 @@ export function EnvironmentObjects() {
         mieCoefficient={0.005}
         sunPosition={[100, 40, -30]}
       />
-
-      {trees.map((tree, idx) => (
-        <Tree key={`tree-${idx}`} {...tree} />
-      ))}
-
-      {mountains.map((mt, idx) => (
-        <Mountain key={`mt-${idx}`} {...mt} />
-      ))}
+      <InstancedTrees />
+      <Mountains />
     </>
   )
 }

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { trackCurve, TRACK_HALF_WIDTH } from '../utils/track'
 
@@ -323,16 +323,28 @@ function computeFencePosts(
   return posts
 }
 
+const _postDummy = new THREE.Object3D()
+const _postGeo = new THREE.BoxGeometry(0.15, 1, 0.15)
+const _postMat = new THREE.MeshStandardMaterial({ color: '#c8c8c8', roughness: 0.5, metalness: 0.4 })
+
 function FencePosts({ posts }: { posts: FencePost[] }) {
+  const meshRef = useRef<THREE.InstancedMesh>(null)
+
+  useEffect(() => {
+    const mesh = meshRef.current
+    if (!mesh) return
+    for (let i = 0; i < posts.length; i++) {
+      const [px, py, pz] = posts[i].position
+      _postDummy.position.set(px, py, pz)
+      _postDummy.scale.set(1, posts[i].height, 1)
+      _postDummy.updateMatrix()
+      mesh.setMatrixAt(i, _postDummy.matrix)
+    }
+    mesh.instanceMatrix.needsUpdate = true
+  }, [posts])
+
   return (
-    <>
-      {posts.map((post, idx) => (
-        <mesh key={idx} position={post.position} castShadow>
-          <boxGeometry args={[0.15, post.height, 0.15]} />
-          <meshStandardMaterial color="#c8c8c8" roughness={0.5} metalness={0.4} />
-        </mesh>
-      ))}
-    </>
+    <instancedMesh ref={meshRef} args={[_postGeo, _postMat, posts.length]} castShadow />
   )
 }
 
