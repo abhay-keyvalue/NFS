@@ -3,6 +3,7 @@ import { HomeScreen } from './components/HomeScreen'
 import { HUD } from './components/HUD'
 import { Loader } from './components/Loader'
 import { RacingScene } from './components/RacingScene'
+import { TouchControls } from './components/TouchControls'
 import type { Difficulty, GameState, PlayerMode, Telemetry } from './types/game'
 
 const TOTAL_LAPS = 3
@@ -170,6 +171,7 @@ export default function App() {
           onToggleOverview={toggleOverview}
           onReset={reset}
         />
+        <TouchControls gameState={gameState} playerMode={playerMode} />
       </main>
     </div>
   )

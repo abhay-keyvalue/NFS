@@ -936,6 +936,61 @@ body {
   }
 }
 
+/* Touch controls — hidden by default, shown on touch devices */
+.touch-controls {
+  display: none;
+  position: absolute;
+  bottom: 1.2rem;
+  left: 1.2rem;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.touch-dpad {
+  display: grid;
+  grid-template-areas:
+    ". up ."
+    "left . right"
+    ". down .";
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px);
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.touch-btn {
+  display: grid;
+  place-items: center;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  background: rgba(10, 18, 30, 0.7);
+  backdrop-filter: blur(6px);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.3rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: background 80ms ease, border-color 80ms ease, transform 80ms ease;
+}
+
+.touch-btn:active {
+  background: rgba(56, 189, 248, 0.35);
+  border-color: rgba(56, 189, 248, 0.7);
+  transform: scale(0.92);
+}
+
+.touch-btn-up { grid-area: up; }
+.touch-btn-left { grid-area: left; }
+.touch-btn-right { grid-area: right; }
+.touch-btn-down { grid-area: down; }
+
+@media (pointer: coarse), (max-width: 900px) {
+  .touch-controls {
+    display: block;
+  }
+}
+
 @media (max-width: 900px) {
   .hud-stats {
     min-width: 280px;
@@ -944,13 +999,16 @@ body {
 
   .home-layout {
     flex-direction: column;
+    justify-content: center;
+    align-items: center;
     padding: 1.5rem;
     gap: 1rem;
+    height: 100%;
   }
 
   .home-showcase {
     flex: 0 0 auto;
-    height: 35vh;
+    height: 30vh;
     width: 100%;
   }
 
@@ -969,5 +1027,31 @@ body {
   .home-header {
     align-items: center;
     text-align: center;
+  }
+
+  .home-mode-multi {
+    display: none;
+  }
+
+  .home-mode-keys {
+    display: none;
+  }
+
+  .home-footer {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .home-mode-multi {
+    display: none;
+  }
+
+  .home-mode-keys {
+    display: none;
+  }
+
+  .home-footer {
+    display: none;
   }
 }
