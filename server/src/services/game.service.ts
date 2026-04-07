@@ -23,36 +23,11 @@ export async function getLeaderboard(
   difficulty?: DifficultyLevel,
   limit = 20
 ): Promise<(GameRecord & { displayName: string; avatarUrl: string | null })[]> {
-  // Subquery to get the best (minimum) elapsed time for each user
-  const subQuery = gameRepo()
-    .createQueryBuilder("sub")
-    .select("sub.userId", "userId")
-    .addSelect("MIN(sub.elapsedMs)", "bestTime")
-    .where("sub.gameMode = :mode", { mode })
-    .groupBy("sub.userId");
-
-  if (difficulty) {
-    subQuery.andWhere("sub.difficulty = :difficulty", { difficulty });
-  }
-
-  // For AI/multiplayer, only show wins
-  if (mode !== GameMode.SOLO) {
-    subQuery.andWhere("sub.won = true");
-  }
-
-  // Main query to get full records matching the best times
   const qb = gameRepo()
     .createQueryBuilder("g")
     .innerJoinAndSelect("g.user", "u")
-    .innerJoin(
-      `(${subQuery.getQuery()})`,
-      "best",
-      "g.userId = best.userId AND g.elapsedMs = best.bestTime"
-    )
     .where("g.gameMode = :mode", { mode })
-    .setParameters(subQuery.getParameters())
-    .orderBy("g.elapsedMs", "ASC")
-    .limit(limit);
+    .orderBy("g.elapsedMs", "ASC");
 
   if (difficulty) {
     qb.andWhere("g.difficulty = :difficulty", { difficulty });
@@ -63,15 +38,22 @@ export async function getLeaderboard(
     qb.andWhere("g.won = true");
   }
 
-  const records = await qb.getMany();
+  const allRecords = await qb.getMany();
   
-  // Remove duplicates in case a user has multiple records with the same best time
-  const uniqueRecords = records.reduce((acc, record) => {
-    if (!acc.find(r => r.userId === record.userId)) {
-      acc.push(record);
+  // Filter to keep only the best record per user
+  const userBestRecords = new Map<string, GameRecord>();
+  
+  for (const record of allRecords) {
+    const existing = userBestRecords.get(record.userId);
+    if (!existing || record.elapsedMs < existing.elapsedMs) {
+      userBestRecords.set(record.userId, record);
     }
-    return acc;
-  }, [] as GameRecord[]);
+  }
+  
+  // Convert map to array and sort by elapsed time
+  const uniqueRecords = Array.from(userBestRecords.values())
+    .sort((a, b) => a.elapsedMs - b.elapsedMs)
+    .slice(0, limit);
 
   return uniqueRecords.map((r) => ({
     ...r,
