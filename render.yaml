@@ -7,11 +7,10 @@ databases:
 services:
   - type: web
     name: nfs-game-server
-    runtime: node
+    runtime: docker
     plan: free
-    rootDir: server
-    buildCommand: npm install && npm run build
-    startCommand: npm run start
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
     envVars:
       - key: NODE_ENV
         value: production
