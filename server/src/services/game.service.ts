@@ -23,10 +23,34 @@ export async function getLeaderboard(
   difficulty?: DifficultyLevel,
   limit = 20
 ): Promise<(GameRecord & { displayName: string; avatarUrl: string | null })[]> {
+  // Subquery to get the best (minimum) elapsed time for each user
+  const subQuery = gameRepo()
+    .createQueryBuilder("sub")
+    .select("sub.userId", "userId")
+    .addSelect("MIN(sub.elapsedMs)", "bestTime")
+    .where("sub.gameMode = :mode", { mode })
+    .groupBy("sub.userId");
+
+  if (difficulty) {
+    subQuery.andWhere("sub.difficulty = :difficulty", { difficulty });
+  }
+
+  // For AI/multiplayer, only show wins
+  if (mode !== GameMode.SOLO) {
+    subQuery.andWhere("sub.won = true");
+  }
+
+  // Main query to get full records matching the best times
   const qb = gameRepo()
     .createQueryBuilder("g")
     .innerJoinAndSelect("g.user", "u")
+    .innerJoin(
+      `(${subQuery.getQuery()})`,
+      "best",
+      "g.userId = best.userId AND g.elapsedMs = best.bestTime"
+    )
     .where("g.gameMode = :mode", { mode })
+    .setParameters(subQuery.getParameters())
     .orderBy("g.elapsedMs", "ASC")
     .limit(limit);
 
@@ -40,7 +64,16 @@ export async function getLeaderboard(
   }
 
   const records = await qb.getMany();
-  return records.map((r) => ({
+  
+  // Remove duplicates in case a user has multiple records with the same best time
+  const uniqueRecords = records.reduce((acc, record) => {
+    if (!acc.find(r => r.userId === record.userId)) {
+      acc.push(record);
+    }
+    return acc;
+  }, [] as GameRecord[]);
+
+  return uniqueRecords.map((r) => ({
     ...r,
     displayName: r.user?.displayName ?? "Unknown",
     avatarUrl: r.user?.avatarUrl ?? null,
