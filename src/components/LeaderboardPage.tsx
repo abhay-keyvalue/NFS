@@ -19,6 +19,8 @@ const DIFFICULTIES = [
   { value: 'hard', label: 'Hard' },
 ] as const
 
+const COFFEE_QR_CODE = 'https://github.com/abhay-keyvalue/NFS/blob/main/public/GooglePay_QR.jpg?raw=true'
+
 export function LeaderboardPage({ onBack }: Props) {
   const [mode, setMode] = useState('solo')
   const [difficulty, setDifficulty] = useState('')
@@ -48,6 +50,27 @@ export function LeaderboardPage({ onBack }: Props) {
   return (
     <div className="page-screen">
       <div className="page-bg-grid" />
+      
+      {/* Floating Coffee Support */}
+      <div className="coffee-support">
+        <div className="coffee-card">
+          <div className="coffee-header">
+            <div className="coffee-icon">☕</div>
+            <div className="coffee-text">
+              <h3>Enjoying the game?</h3>
+              <p>Support development with a coffee!</p>
+            </div>
+          </div>
+          <div className="coffee-qr">
+            <img src={COFFEE_QR_CODE} alt="UPI QR Code" className="qr-code" />
+            <p className="qr-label">Scan to pay via UPI</p>
+          </div>
+          <div className="coffee-footer">
+            <span className="coffee-heart">Made with ❤️</span>
+          </div>
+        </div>
+      </div>
+
       <div className="page-container">
         <div className="page-top-bar">
           <button className="page-back-btn" onClick={onBack}>
