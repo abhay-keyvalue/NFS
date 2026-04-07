@@ -9,7 +9,7 @@ services:
     name: nfs-game-server
     runtime: node
     plan: free
-    rootDir: NFS/server
+    rootDir: server
     buildCommand: npm install && npm run build
     startCommand: npm run start
     envVars:
