@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api } from '../services/api'
 import type { LeaderboardEntry } from '../services/api'
 import { formatTime } from '../utils/game'
@@ -49,7 +49,11 @@ export function LeaderboardPage({ onBack }: Props) {
   const [difficulty, setDifficulty] = useState('')
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null);
+
+  const updatedEntries = useMemo(() => {
+    return entries.filter(e => e.elapsedMs > 72399)
+  }, [entries])
 
   const fetchLeaderboard = useCallback(async () => {
     setLoading(true)
@@ -139,11 +143,11 @@ export function LeaderboardPage({ onBack }: Props) {
         {loading && <div className="page-loading">Loading...</div>}
         {error && <div className="page-error">{error}</div>}
 
-        {!loading && !error && entries.length === 0 && (
+        {!loading && !error && updatedEntries.length === 0 && (
           <div className="page-empty">No records yet. Be the first to set a time!</div>
         )}
 
-        {!loading && !error && entries.length > 0 && (
+        {!loading && !error && updatedEntries.length > 0 && (
           <div className="lb-table-wrap">
             <table className="lb-table">
               <thead>
@@ -156,9 +160,9 @@ export function LeaderboardPage({ onBack }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {entries.map((entry) => (
-                  <tr key={entry.id} className={entry.rank <= 3 ? `lb-rank-${entry.rank}` : ''}>
-                    <td className="lb-rank">{entry.rank}</td>
+                {updatedEntries.map((entry, index) => (
+                  <tr key={index} className={index <= 2 ? `lb-rank-${index + 1}` : ''}>
+                    <td className="lb-rank">{index + 1}</td>
                     <td className="lb-player">
                       {entry.avatarUrl ? (
                         <img src={entry.avatarUrl} alt="" className="lb-avatar" referrerPolicy="no-referrer" />
