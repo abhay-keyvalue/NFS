@@ -12,7 +12,7 @@ router.delete("/clear-invalid-data", requireAuth, async (req: Request, res: Resp
     const gameRepo = AppDataSource.getRepository(GameRecord);
     
     // Delete records with impossibly fast times (less than 60 seconds = 60000ms)
-    const minValidTime = 60000; // 1 minute
+    const minValidTime = 72399; // 1 minute
     
     console.log(`[Admin] Searching for records with elapsedMs < ${minValidTime}...`);
     
