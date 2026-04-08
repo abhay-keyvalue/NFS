@@ -12,7 +12,7 @@ router.delete("/clear-invalid-data", requireAuth, async (req: Request, res: Resp
     const gameRepo = AppDataSource.getRepository(GameRecord);
     
     // Delete records with impossibly fast times (less than 60 seconds = 60000ms)
-    const minValidTime = 72399; // 1 minute
+    const minValidTime = 60000; // 1 minute
     
     console.log(`[Admin] Searching for records with elapsedMs < ${minValidTime}...`);
     
@@ -70,6 +70,76 @@ router.delete("/clear-invalid-data", requireAuth, async (req: Request, res: Resp
     res.status(500).json({ 
       success: false,
       error: "Failed to clear invalid data",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Admin endpoint to delete a specific record by ID
+// DELETE /api/admin/record/:id
+router.delete("/record/:id", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      res.status(400).json({
+        success: false,
+        error: "Record ID is required"
+      });
+      return;
+    }
+    
+    const gameRepo = AppDataSource.getRepository(GameRecord);
+    
+    // First, get the record to show what will be deleted
+    const record = await gameRepo
+      .createQueryBuilder("game")
+      .leftJoinAndSelect("game.user", "user")
+      .where("game.id = :id", { id })
+      .getOne();
+    
+    if (!record) {
+      res.status(404).json({
+        success: false,
+        error: "Record not found"
+      });
+      return;
+    }
+    
+    const recordDetails = {
+      id: record.id,
+      userId: record.userId,
+      displayName: record.user?.displayName || "Unknown",
+      elapsedMs: record.elapsedMs,
+      gameMode: record.gameMode,
+      totalLaps: record.totalLaps,
+      collisions: record.collisions,
+      createdAt: record.createdAt
+    };
+    
+    console.log(`[Admin] Deleting record - ID: ${record.id}, User: ${recordDetails.displayName}, Time: ${record.elapsedMs}ms`);
+    
+    // Delete the record
+    const result = await gameRepo
+      .createQueryBuilder()
+      .delete()
+      .from(GameRecord)
+      .where("id = :id", { id })
+      .execute();
+    
+    console.log(`[Admin] Successfully deleted record ${id}`);
+    
+    res.json({
+      success: true,
+      message: "Successfully deleted record",
+      deleted: result.affected,
+      record: recordDetails
+    });
+  } catch (error) {
+    console.error("[Admin] Error deleting record:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to delete record",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
