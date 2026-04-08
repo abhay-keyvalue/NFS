@@ -9,6 +9,7 @@ import { AppDataSource } from "./config/database";
 import authRoutes from "./routes/auth";
 import gameRoutes from "./routes/games";
 import userRoutes from "./routes/users";
+import adminRoutes from "./routes/admin";
 
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
@@ -36,6 +37,7 @@ async function bootstrap() {
   app.use("/api/auth", authRoutes);
   app.use("/api/games", gameRoutes);
   app.use("/api/users", userRoutes);
+  app.use("/api/admin", adminRoutes);
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok" });
