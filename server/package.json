@@ -6,7 +6,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "typeorm": "typeorm-ts-node-commonjs"
+    "typeorm": "typeorm-ts-node-commonjs",
+    "cleanup:hacked": "tsx src/scripts/cleanupHackedData.ts"
   },
   "dependencies": {
     "@types/cors": "^2.8.17",
