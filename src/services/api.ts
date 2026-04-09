@@ -81,7 +81,18 @@ export const api = {
   },
 
   games: {
+    startSession: (data: {
+      gameMode: string;
+      difficulty?: string | null;
+      totalLaps: number;
+    }) =>
+      request<{ sessionId: string }>("/api/games/start-session", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+
     save: (data: {
+      sessionId: string;
       gameMode: string;
       difficulty?: string | null;
       totalLaps: number;

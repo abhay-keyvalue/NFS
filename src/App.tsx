@@ -35,6 +35,7 @@ export default function App() {
   const [resetToken, setResetToken] = useState(0)
   const [showOverview, setShowOverview] = useState(true)
   const countdownTimer = useRef<number>(0)
+  const sessionIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (gameState !== 'countdown') return
@@ -104,6 +105,11 @@ export default function App() {
       return
     }
 
+    if (!sessionIdRef.current) {
+      setSaveMessage('Failed to save race (no session)')
+      return
+    }
+
     setRaceSaved(true)
 
     const modeMap: Record<PlayerMode, string> = {
@@ -114,6 +120,7 @@ export default function App() {
 
     api.games
       .save({
+        sessionId: sessionIdRef.current,
         gameMode: modeMap[playerMode],
         difficulty: playerMode === 'ai' ? difficulty : null,
         totalLaps: TOTAL_LAPS,
@@ -138,6 +145,7 @@ export default function App() {
     setResetToken((v) => v + 1)
     setRaceSaved(false)
     setSaveMessage(null)
+    sessionIdRef.current = null
   }, [])
 
   const start = useCallback((mode: PlayerMode, diff?: Difficulty) => {
@@ -148,7 +156,29 @@ export default function App() {
     if (diff) setDifficulty(diff)
     setGameState('countdown')
     setViewState('countdown')
-  }, [gameState, resetRace])
+
+    const modeMap: Record<PlayerMode, string> = {
+      single: 'solo',
+      ai: 'ai',
+      multi: 'multiplayer',
+    }
+
+    if (isAuthenticated) {
+      api.games
+        .startSession({
+          gameMode: modeMap[mode],
+          difficulty: mode === 'ai' ? (diff ?? 'medium') : null,
+          totalLaps: TOTAL_LAPS,
+        })
+        .then(({ sessionId }) => {
+          sessionIdRef.current = sessionId
+        })
+        .catch((err) => {
+          console.warn('Failed to start game session:', err)
+          sessionIdRef.current = null
+        })
+    }
+  }, [gameState, resetRace, isAuthenticated])
 
   const toggleOverview = useCallback(() => {
     setShowOverview((v) => !v)
