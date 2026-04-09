@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requireAdmin } from "../middleware/adminAuth";
 import { AppDataSource } from "../config/database";
 import { GameRecord } from "../entities/GameRecord";
 
@@ -7,7 +8,7 @@ const router = Router();
 
 // Admin endpoint to clear invalid/hacked data
 // DELETE /api/admin/clear-invalid-data
-router.delete("/clear-invalid-data", requireAuth, async (req: Request, res: Response) => {
+router.delete("/clear-invalid-data", requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const gameRepo = AppDataSource.getRepository(GameRecord);
     
@@ -77,7 +78,7 @@ router.delete("/clear-invalid-data", requireAuth, async (req: Request, res: Resp
 
 // Admin endpoint to delete a specific record by ID
 // DELETE /api/admin/record/:id
-router.delete("/record/:id", requireAuth, async (req: Request, res: Response) => {
+router.delete("/record/:id", requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
@@ -147,7 +148,7 @@ router.delete("/record/:id", requireAuth, async (req: Request, res: Response) =>
 
 // Admin endpoint to get statistics about invalid data
 // GET /api/admin/invalid-data-stats
-router.get("/invalid-data-stats", requireAuth, async (req: Request, res: Response) => {
+router.get("/invalid-data-stats", requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const gameRepo = AppDataSource.getRepository(GameRecord);
     const minValidTime = 60000; // 1 minute

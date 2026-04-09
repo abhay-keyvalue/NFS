@@ -14,8 +14,25 @@ import adminRoutes from "./routes/admin";
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
 async function bootstrap() {
-  await AppDataSource.initialize();
-  console.log("Database connected");
+  console.log("Attempting to connect to database...");
+  
+  let retries = 5;
+  while (retries > 0) {
+    try {
+      await AppDataSource.initialize();
+      console.log("Database connected successfully");
+      break;
+    } catch (error) {
+      retries--;
+      console.error(`Database connection failed. Retries left: ${retries}`, error);
+      
+      if (retries === 0) {
+        throw error;
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  }
 
   const app = express();
 
