@@ -51,10 +51,6 @@ export function LeaderboardPage({ onBack }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null);
 
-  const updatedEntries = useMemo(() => {
-    return entries.filter(e => e.elapsedMs > 72399)
-  }, [entries])
-
   const fetchLeaderboard = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -143,11 +139,11 @@ export function LeaderboardPage({ onBack }: Props) {
         {loading && <div className="page-loading">Loading...</div>}
         {error && <div className="page-error">{error}</div>}
 
-        {!loading && !error && updatedEntries.length === 0 && (
+        {!loading && !error && entries.length === 0 && (
           <div className="page-empty">No records yet. Be the first to set a time!</div>
         )}
 
-        {!loading && !error && updatedEntries.length > 0 && (
+        {!loading && !error && entries.length > 0 && (
           <div className="lb-table-wrap">
             <table className="lb-table">
               <thead>
@@ -160,9 +156,11 @@ export function LeaderboardPage({ onBack }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {updatedEntries.map((entry, index) => (
-                  <tr key={index} className={index <= 2 ? `lb-rank-${index + 1}` : ''}>
-                    <td className="lb-rank">{index + 1}</td>
+                {entries.map((entry) => (
+                  <tr key={entry.rank}>
+                    <td className="lb-rank">
+                      <div className={entry.rank <= 3 ? `lb-rank-${entry.rank}` : 'lb-rank-n'}>{entry.rank}</div>
+                      </td>
                     <td className="lb-player">
                       {entry.avatarUrl ? (
                         <img src={entry.avatarUrl} alt="" className="lb-avatar" referrerPolicy="no-referrer" />
