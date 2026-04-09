@@ -174,6 +174,10 @@ router.post("/", requireAuth, gameSubmissionRateLimit, async (req: Request, res:
   }
 });
 
+router.options("/leaderboard", (_req, res) => {
+  res.status(204).end();
+});
+
 router.get("/leaderboard", async (req: Request, res: Response) => {
   try {
     const mode = (req.query.mode as GameMode) || GameMode.SOLO;
