@@ -9,6 +9,12 @@ import {
   getLeaderboard,
   getUserHistory,
 } from "../services/game.service";
+import {
+  saveCheckpoint,
+  validateCheckpoint,
+  validateFinalSubmission,
+  getCheckpointStats,
+} from "../services/checkpoint.service";
 
 const router = Router();
 const SESSION_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
@@ -56,6 +62,62 @@ router.post("/start-session", requireAuth, async (req: Request, res: Response) =
   } catch (err) {
     console.error("Start session error:", err);
     res.status(500).json({ error: "Failed to start game session" });
+  }
+});
+
+// Submit a checkpoint during gameplay
+router.post("/checkpoint", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { sessionId, sequenceNumber, timestamp, position, velocity, currentLap, collisionCount, rotationY } = req.body;
+
+    if (!sessionId || sequenceNumber == null || timestamp == null || !position || velocity == null || currentLap == null || collisionCount == null) {
+      res.status(400).json({ error: "Missing required checkpoint data" });
+      return;
+    }
+
+    // Validate the checkpoint
+    const validation = await validateCheckpoint({
+      sessionId,
+      sequenceNumber,
+      timestamp,
+      position,
+      velocity,
+      currentLap,
+      collisionCount,
+      rotationY,
+    });
+
+    if (!validation.valid) {
+      console.warn(`[Security] Checkpoint validation failed for session ${sessionId}: ${validation.reason}`);
+      res.status(400).json({ error: validation.reason });
+      return;
+    }
+
+    // Save the checkpoint
+    const checkpoint = await saveCheckpoint({
+      sessionId,
+      sequenceNumber,
+      timestamp,
+      position,
+      velocity,
+      currentLap,
+      collisionCount,
+      rotationY,
+    });
+
+    // Log suspicious flags if any
+    if (validation.suspiciousFlags && validation.suspiciousFlags.length > 0) {
+      console.warn(`[Security] Suspicious checkpoint for session ${sessionId}:`, validation.suspiciousFlags);
+    }
+
+    res.status(201).json({ 
+      success: true, 
+      checkpointId: checkpoint.id,
+      suspiciousFlags: validation.suspiciousFlags || []
+    });
+  } catch (err) {
+    console.error("Checkpoint error:", err);
+    res.status(500).json({ error: "Failed to save checkpoint" });
   }
 });
 
@@ -151,6 +213,35 @@ router.post("/", requireAuth, gameSubmissionRateLimit, async (req: Request, res:
     if (totalLaps < 1 || totalLaps > 10) {
       res.status(400).json({ error: "Invalid number of laps." });
       return;
+    }
+
+    // --- Checkpoint validation ---
+    const checkpointValidation = await validateFinalSubmission(sessionId, {
+      elapsedMs,
+      collisionCount: collisions,
+      totalLaps,
+    });
+
+    if (!checkpointValidation.valid) {
+      console.warn(
+        `[Security] Final submission validation failed for session ${sessionId}: ${checkpointValidation.reason}`
+      );
+      res.status(400).json({ error: checkpointValidation.reason });
+      return;
+    }
+
+    // Log suspicious flags from checkpoint validation
+    if (checkpointValidation.suspiciousFlags && checkpointValidation.suspiciousFlags.length > 0) {
+      console.warn(
+        `[Security] Suspicious final submission for session ${sessionId}:`,
+        checkpointValidation.suspiciousFlags
+      );
+    }
+
+    // Get checkpoint statistics for logging
+    const checkpointStats = await getCheckpointStats(sessionId);
+    if (checkpointStats) {
+      console.log(`[Game] Checkpoint stats for session ${sessionId}:`, checkpointStats);
     }
 
     // Mark session as used before saving the record

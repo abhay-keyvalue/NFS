@@ -124,6 +124,24 @@ export const api = {
       const qs = limit ? `?limit=${limit}` : "";
       return request<{ history: GameRecordData[] }>(`/api/games/history${qs}`);
     },
+
+    checkpoint: (data: {
+      sessionId: string;
+      sequenceNumber: number;
+      timestamp: number;
+      position: { x: number; y: number; z: number };
+      velocity: number;
+      currentLap: number;
+      collisionCount: number;
+      rotationY?: number;
+    }) =>
+      request<{ success: boolean; checkpointId: string; suspiciousFlags: string[] }>(
+        "/api/games/checkpoint",
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      ),
   },
 
   users: {

@@ -2,6 +2,7 @@ import { DataSource } from "typeorm";
 import { User } from "../entities/User";
 import { GameRecord } from "../entities/GameRecord";
 import { GameSession } from "../entities/GameSession";
+import { GameCheckpoint } from "../entities/GameCheckpoint";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -16,7 +17,7 @@ export const AppDataSource = new DataSource({
   url: process.env.DATABASE_URL,
   synchronize: true,
   logging: !isProduction,
-  entities: [User, GameRecord, GameSession],
+  entities: [User, GameRecord, GameSession, GameCheckpoint],
   ssl: isProduction ? { rejectUnauthorized: false } : false,
   connectTimeoutMS: 30000,
   extra: {
