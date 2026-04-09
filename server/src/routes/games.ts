@@ -30,7 +30,7 @@ router.post("/", requireAuth, gameSubmissionRateLimit, async (req: Request, res:
     }
 
     // Validation: Minimum time per lap is ~20 seconds (60 seconds for 3 laps)
-    const minTimePerLap = 24100; // 24 seconds in milliseconds
+    const minTimePerLap = 22065; // 22.065 seconds in milliseconds
     const minTotalTime = minTimePerLap * totalLaps;
     
     if (elapsedMs < minTotalTime) {
